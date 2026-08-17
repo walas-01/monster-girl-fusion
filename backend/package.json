@@ -1,0 +1,20 @@
+{
+  "name": "monster_g",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "walas",
+  "type": "commonjs",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

@@ -1,0 +1,18 @@
+
+
+  .framework,
+  .vite {
+    position: absolute;
+  }
+
+
+
+
+.sprite-borde {
+  /* Sintaxis: drop-shadow(offset-x offset-y blur-radius color) */
+  filter: 
+    drop-shadow(2px 0 0 #000)
+    drop-shadow(-2px 0 0 #000)
+    drop-shadow(0 2px 0 #000)
+    drop-shadow(0 -2px 0 #000);
+}
