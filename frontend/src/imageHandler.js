@@ -6,8 +6,6 @@ const images = import.meta.glob(
   }
 );
 
-console.log(images);
-
 
 export function getImage(path) {
   return images[`./assets/${path}`];

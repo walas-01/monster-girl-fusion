@@ -7,12 +7,13 @@ const router = express.Router();
 
 /// -- Monster Encyclopedia -- ///
 
-
 // POST
 router.post("/encyclopedia", monstersController.uploadMonstersToEncyclopedia);
 
 // GET
 router.get("/encyclopedia", monstersController.getAllMonstersFromEncyclopedia);
+
+
 
 
 /// --- Monster Recipes --- ///
@@ -25,6 +26,8 @@ router.put("/recipes", monstersController.updateMonsterRecipes);
 
 
 
+
+
 /// -- Monster Instances -- ///
 
 // POST
@@ -33,6 +36,9 @@ router.post("/", monstersController.createMonster);
 router.post("/fuse", monstersController.fuseMonsters);
 
 //GET
-router.get("/", monstersController.getAllMonstersForPlayer);
+router.get("/:uuid", monstersController.getMonstersByPlayerUuid);
+
+router.get("/details/:id",monstersController.getMonsterInfoById)
+
 
 module.exports = router;

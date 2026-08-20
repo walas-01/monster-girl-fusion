@@ -17,7 +17,7 @@ function createPlayer(playerData) {
 
     const result = statement.run(username, uuid);
 
-    return result.lastInsertRowid; // returns the id of the new player
+    return { username: username, id: result.lastInsertRowid, uuid: uuid } ; // returns the id and uuid of the new player
 }
 
 // GET
@@ -27,6 +27,11 @@ function getAllPlayers() {
         SELECT * FROM players
     `).all();
 }
+
+
+
+
+
 
 
 module.exports = {

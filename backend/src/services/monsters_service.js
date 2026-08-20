@@ -1,8 +1,7 @@
 const db = require("../db/database.js");
 
 
-
-/// --- Monster Encyclopedia --- ///
+/// -------------------------------------------------------------------------------------- Monster Encyclopedia --- ///
 
 function uploadMonstersToEncyclopedia(monsters) {
     const transaction = db.transaction(() => {
@@ -28,9 +27,6 @@ function uploadMonstersToEncyclopedia(monsters) {
         const added = [];
         const skipped = [];
 
-        // --------------------------------------------------
-        // PHASE 1: Insert all monsters
-        // --------------------------------------------------
 
         for (const monsterData of monsters) {
             const {
@@ -54,11 +50,6 @@ function uploadMonstersToEncyclopedia(monsters) {
 
             console.log("[monsters_service]: added monster: " + name);
         }
-
-
-        // --------------------------------------------------
-        // PHASE 2: Insert recipes
-        // --------------------------------------------------
 
         for (const monsterData of monsters) {
             const {name,recipes} = monsterData;
@@ -88,7 +79,7 @@ function getAllMonstersFromEncyclopedia() {
 }
 
 
-/// --- Monster Recipes --- ///
+/// --------------------------------------------------------------------------------------------------- Monster Recipes --- ///
 
 
 //! [GET]
@@ -147,12 +138,9 @@ function updateMonsterRecipes(resultMonster, recipes) {
 
 
 
+/// ------------------------------------------------------------------------------------------------------ Monster Instances --- ///
 
-
-
-
-
-/// --- Monster Instances --- ///
+//! ------------------------------------------------------------- |||||[ POST ]||||
 
 function createMonster(species, nickname, playerId) {
     const encyclopediaMonster = db.prepare(`
@@ -203,14 +191,105 @@ function createMonster(species, nickname, playerId) {
 }
 
 
+//! ------------------------------------------------------------- |||||[ GET ]||||
 
 
-function getAllMonstersForPlayer(playerId) {
+function getMonstersByPlayerUuid(uuid) { //! ----- GET all by player uuid
     return db.prepare(`
-        SELECT * FROM monsters
-        WHERE owner_id = ?
-    `).all(playerId);
+        SELECT
+            monsters.id,
+            monster_encyclopedia.name,
+            monster_encyclopedia.display_name,
+            monster_encyclopedia.tier,
+            monsters.nickname,
+            monster_encyclopedia.max_hp,
+            monster_encyclopedia.atk,
+            monster_encyclopedia.spd,
+            monster_encyclopedia.aim,
+            monsters.owner_id,
+            monster_encyclopedia.image_path
+
+        FROM monsters
+
+        JOIN players
+            ON monsters.owner_id = players.id
+
+        JOIN monster_encyclopedia
+            ON monsters.species = monster_encyclopedia.name
+
+        WHERE players.uuid = ?
+    `).all(uuid);
 }
+
+
+
+function getMonsterById(monsterId) { //! ----- GET a monster by Id and its recipes (with name and images)
+
+    const monster = db.prepare(`
+        SELECT
+            monsters.id,
+            monster_encyclopedia.name,
+            monster_encyclopedia.display_name,
+            monster_encyclopedia.tier,
+            monsters.nickname,
+            monster_encyclopedia.max_hp,
+            monster_encyclopedia.atk,
+            monster_encyclopedia.spd,
+            monster_encyclopedia.aim,
+            monster_encyclopedia.image_path
+        FROM monsters
+
+        JOIN monster_encyclopedia
+            ON monsters.species = monster_encyclopedia.name
+
+        WHERE monsters.id = ?
+    `).get(monsterId);
+
+
+    if (!monster) {return null;}
+
+
+    const recipes = db.prepare(`
+        SELECT
+            p1.display_name AS parent1_display_name,
+            p1.image_path AS parent1_image_path,
+            p1.tier AS parent1_tier,
+
+            p2.display_name AS parent2_display_name,
+            p2.image_path AS parent2_image_path,
+            p2.tier AS parent2_tier
+
+        FROM monster_recipes r
+
+        JOIN monster_encyclopedia p1
+            ON r.parent_1 = p1.name
+
+        JOIN monster_encyclopedia p2
+            ON r.parent_2 = p2.name
+
+        WHERE r.result = ?
+    `).all(monster.name);
+
+
+    monster.recipes = recipes.map(recipe => ({
+        parent1: {
+            display_name: recipe.parent1_display_name,
+            image_path: recipe.parent1_image_path,
+            tier: recipe.parent1_tier
+        },
+
+        parent2: {
+            display_name: recipe.parent2_display_name,
+            image_path: recipe.parent2_image_path,
+            tier: recipe.parent2_tier
+        }
+    }));
+
+
+    return monster;
+}
+
+
 
 
 
@@ -284,7 +363,8 @@ module.exports = {
     uploadMonstersToEncyclopedia,
     getAllMonstersFromEncyclopedia,
     createMonster,
-    getAllMonstersForPlayer,
+    getMonstersByPlayerUuid,
+    getMonsterById,
     getAllRecipes,
     updateMonsterRecipes,
     fuseMonsters

@@ -1,6 +1,6 @@
 const monstersService = require("../services/monsters_service");
 
-/// --- Monster Encyclopedia --- ///
+/// ------------------------------------------------------------ Monster Encyclopedia --- ///
 
 function uploadMonstersToEncyclopedia(req, res) {
     const minsterList = req.body;
@@ -27,7 +27,7 @@ function getAllMonstersFromEncyclopedia(req, res) {
 }
 
 
-/// --- Monster Recipes --- ///
+/// -------------------------------------------------------------------------- Monster Recipes --- ///
 
 function getAllRecipes(req, res) {
     const recipes = monstersService.getAllRecipes();    
@@ -48,35 +48,69 @@ function updateMonsterRecipes(req, res) {
 
 
 
-/// --- Monster Instances --- ///
+/// ------------------------------------------------------------------ Monster Instances --- ///
 function createMonster(req, res) {
     const {species, nickname, playerId} = req.body;
 
-    // VALIDATION 
-    // here I should validate the incoming data to match the type of variable and length
+    try {
+        const monster = monstersService.createMonster(species, nickname, playerId);
 
-    const monster = monstersService.createMonster(species, nickname, playerId);
+        console.log("[post]: monster created with id: " + monster.id + " for player: " + monster.playerId );
+        res.status(201).json({
+            message: ("Monster created for the player" +monster.playerId),
+            monster: monster
+        });
 
-    console.log("[post]: monster created with id: " + monster.id + " for player: " + monster.playerId );
-    res.status(201).json({
-        message: ("Monster created for the player" +monster.playerId),
-        monster: monster
-    });
-
+    }catch(error){
+        res.status(400).json({
+            error: "Failed to create monster",
+            message: error.message
+        });
+    }
 }
 
 
 
-function getAllMonstersForPlayer(req, res) {
-    const {playerId} = req.body;
+function getMonstersByPlayerUuid(req, res) {
 
-    const monsters = monstersService.getAllMonstersForPlayer(playerId);
+    try{
+        const { uuid } = req.params;
 
-    res.status(200).json({
-        monsters_found: monsters.length,
-        monsters: monsters
-    });
+        const monsters = monstersService.getMonstersByPlayerUuid(uuid);
+
+        console.log("[get]: getting monsters for player with uuid: " + uuid );
+        res.status(200).json({
+            monsters_found: monsters.length,
+            monsters: monsters
+        });
+    }catch(err){
+        console.error("[ERROR]: Failed to retrieve monsters for player with uuid: " + uuid, err);
+        res.status(500).json({
+            error: "Failed to retrieve monsters",
+            message: err.message
+        });
+    }
 }
+
+
+function getMonsterInfoById(req,res){
+    const {id} = req.params
+
+    try{
+        const monster = monstersService.getMonsterById(id);
+
+        console.log("[get]: getting info for monster with id: " + id );
+        res.status(200).json({
+            monster: monster
+        });
+    }catch(err){
+        console.error("[ERROR]: Failed to retrieve monster with id: " + id);
+        res.status(500).json({
+            error: "Failed to retrieve monster",
+            message: err.message
+        });
+    }
+} 
 
 
 function fuseMonsters(req, res) {
@@ -96,11 +130,14 @@ function fuseMonsters(req, res) {
     }
 }
 
+
+
 module.exports = {
+    getMonsterInfoById,
     uploadMonstersToEncyclopedia,
     getAllMonstersFromEncyclopedia,
     createMonster,
-    getAllMonstersForPlayer,
+    getMonstersByPlayerUuid,
     getAllRecipes,
     updateMonsterRecipes,
     fuseMonsters
