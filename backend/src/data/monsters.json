@@ -1,0 +1,630 @@
+[
+  {
+    "name": "candle",
+    "display_name": "Chica Vela",
+    "recipes": [
+      {
+        "parent_1": "fire",
+        "parent_2": "honey_slime"
+      }
+    ],
+    "image_path": "monsters/candle.png",
+    "type": "synthetic",
+    "tier": 3,
+    "max_hp": 66,
+    "spd": 6,
+    "atk": 21,
+    "aim": 7
+  },
+  {
+    "name": "golem",
+    "display_name": "Golem",
+    "recipes": [],
+    "image_path": "monsters/golem.png",
+    "type": "synthetic",
+    "tier": 3,
+    "max_hp": 60,
+    "spd": 4,
+    "atk": 17,
+    "aim": 4
+  },
+  {
+    "name": "gargoyle",
+    "display_name": "Gárgola",
+    "recipes": [
+      {
+        "parent_1": "golem",
+        "parent_2": "harpy"
+      }
+    ],
+    "image_path": "monsters/gargoyle.png",
+    "type": "synthetic",
+    "tier": 3,
+    "max_hp": 64,
+    "spd": 6,
+    "atk": 18,
+    "aim": 5
+  },
+  {
+    "name": "armor",
+    "display_name": "Armadura Encantada",
+    "recipes": [
+      {
+        "parent_1": "golem",
+        "parent_2": "fire"
+      }
+    ],
+    "image_path": "monsters/armor.png",
+    "type": "synthetic",
+    "tier": 3,
+    "max_hp": 54,
+    "spd": 6,
+    "atk": 24,
+    "aim": 6
+  },
+  {
+    "name": "slime",
+    "display_name": "Slime",
+    "recipes": [],
+    "image_path": "monsters/slime.png",
+    "type": "slime",
+    "tier": 0,
+    "max_hp": 10,
+    "spd": 0,
+    "atk": 8,
+    "aim": 0
+  },
+  {
+    "name": "jellyfish",
+    "display_name": "Aguaviva",
+    "recipes": [
+      {
+        "parent_1": "slime",
+        "parent_2": "mergirl"
+      }
+    ],
+    "image_path": "monsters/jellyfish.png",
+    "type": "slime",
+    "tier": 1,
+    "max_hp": 48,
+    "spd": 3,
+    "atk": 19,
+    "aim": 2
+  },
+  {
+    "name": "bubble_slime",
+    "display_name": "Slime de Jabón",
+    "recipes": [
+      {
+        "parent_1": "slime",
+        "parent_2": "jellyfish"
+      }
+    ],
+    "image_path": "monsters/bubble_slime.png",
+    "type": "slime",
+    "tier": 1,
+    "max_hp": 52,
+    "spd": 4,
+    "atk": 8,
+    "aim": 3
+  },
+  {
+    "name": "egg_slime",
+    "display_name": "Slime de Huevo",
+    "recipes": [
+      {
+        "parent_1": "harpy",
+        "parent_2": "slime"
+      }
+    ],
+    "image_path": "monsters/egg_slime.png",
+    "type": "slime",
+    "tier": 2,
+    "max_hp": 54,
+    "spd": 4,
+    "atk": 9,
+    "aim": 4
+  },
+  {
+    "name": "poison_slime",
+    "display_name": "Slime de Veneno",
+    "recipes": [
+      {
+        "parent_1": "plant",
+        "parent_2": "slime"
+      }
+    ],
+    "image_path": "monsters/poison_slime.png",
+    "type": "slime",
+    "tier": 2,
+    "max_hp": 44,
+    "spd": 4,
+    "atk": 21,
+    "aim": 4
+  },
+  {
+    "name": "honey_slime",
+    "display_name": "Slime de Miel",
+    "recipes": [
+      {
+        "parent_1": "bee",
+        "parent_2": "slime"
+      }
+    ],
+    "image_path": "monsters/honey_slime.png",
+    "type": "slime",
+    "tier": 2,
+    "max_hp": 72,
+    "spd": 5,
+    "atk": 17,
+    "aim": 4
+  },
+  {
+    "name": "frog",
+    "display_name": "Chica Rana",
+    "recipes": [
+      {
+        "parent_1": "poison_slime",
+        "parent_2": "lizard"
+      }
+    ],
+    "image_path": "monsters/frog.png",
+    "type": "slime",
+    "tier": 2,
+    "max_hp": 48,
+    "spd": 7,
+    "atk": 16,
+    "aim": 4
+  },
+  {
+    "name": "lava_slime",
+    "display_name": "Slime de Lava",
+    "recipes": [
+      {
+        "parent_1": "fire",
+        "parent_2": "slime"
+      }
+    ],
+    "image_path": "monsters/lava_slime.png",
+    "type": "slime",
+    "tier": 3,
+    "max_hp": 64,
+    "spd": 5,
+    "atk": 24,
+    "aim": 5
+  },
+  {
+    "name": "lizard",
+    "display_name": "Chica Lagarto",
+    "recipes": [],
+    "image_path": "monsters/lizard.png",
+    "type": "scales",
+    "tier": 0,
+    "max_hp": 10,
+    "spd": 1,
+    "atk": 2,
+    "aim": 0
+  },
+  {
+    "name": "mergirl",
+    "display_name": "Chica Pez",
+    "recipes": [
+      {
+        "parent_1": "lizard",
+        "parent_2": "slime"
+      }
+    ],
+    "image_path": "monsters/mergirl.png",
+    "type": "scales",
+    "tier": 1,
+    "max_hp": 51,
+    "spd": 3,
+    "atk": 7,
+    "aim": 2
+  },
+  {
+    "name": "mermaid",
+    "display_name": "Sirena",
+    "recipes": [
+      {
+        "parent_1": "lizard",
+        "parent_2": "mergirl"
+      }
+    ],
+    "image_path": "monsters/mermaid.png",
+    "type": "scales",
+    "tier": 1,
+    "max_hp": 58,
+    "spd": 6,
+    "atk": 7,
+    "aim": 3
+  },
+  {
+    "name": "lamia",
+    "display_name": "Lamia",
+    "recipes": [
+      {
+        "parent_1": "frog",
+        "parent_2": "lizard"
+      }
+    ],
+    "image_path": "monsters/lamia.png",
+    "type": "scales",
+    "tier": 2,
+    "max_hp": 52,
+    "spd": 8,
+    "atk": 23,
+    "aim": 5
+  },
+  {
+    "name": "medusa",
+    "display_name": "Medusa",
+    "recipes": [
+      {
+        "parent_1": "mermaid",
+        "parent_2": "lamia"
+      }
+    ],
+    "image_path": "monsters/medusa.png",
+    "type": "scales",
+    "tier": 2,
+    "max_hp": 60,
+    "spd": 9,
+    "atk": 31,
+    "aim": 6
+  },
+  {
+    "name": "salamander",
+    "display_name": "Salamandra de Fuego",
+    "recipes": [
+      {
+        "parent_1": "fire",
+        "parent_2": "lizard"
+      }
+    ],
+    "image_path": "monsters/salamander.png",
+    "type": "scales",
+    "tier": 3,
+    "max_hp": 44,
+    "spd": 6,
+    "atk": 24,
+    "aim": 5
+  },
+  {
+    "name": "draconian",
+    "display_name": "Dragona",
+    "recipes": [
+      {
+        "parent_1": "basilisk",
+        "parent_2": "salamander"
+      }
+    ],
+    "image_path": "monsters/draconian.png",
+    "type": "scales",
+    "tier": 3,
+    "max_hp": 92,
+    "spd": 11,
+    "atk": 37,
+    "aim": 7
+  },
+  {
+    "name": "plant",
+    "display_name": "Chica Planta",
+    "recipes": [],
+    "image_path": "monsters/plant.png",
+    "type": "quills",
+    "tier": 2,
+    "max_hp": 50,
+    "spd": 3,
+    "atk": 14,
+    "aim": 4
+  },
+  {
+    "name": "carnivore_plant",
+    "display_name": "Planta Carnívora",
+    "recipes": [
+      {
+        "parent_1": "plant",
+        "parent_2": "lizard"
+      }
+    ],
+    "image_path": "monsters/carnivore_plant.png",
+    "type": "quills",
+    "tier": 2,
+    "max_hp": 44,
+    "spd": 4,
+    "atk": 21,
+    "aim": 5
+  },
+  {
+    "name": "dryad",
+    "display_name": "Druida",
+    "recipes": [
+      {
+        "parent_1": "plant",
+        "parent_2": "lamb"
+      }
+    ],
+    "image_path": "monsters/dryad.png",
+    "type": "quills",
+    "tier": 2,
+    "max_hp": 64,
+    "spd": 5,
+    "atk": 15,
+    "aim": 4
+  },
+  {
+    "name": "moth",
+    "display_name": "Mujer Polilla",
+    "recipes": [
+      {
+        "parent_1": "plant",
+        "parent_2": "harpy"
+      }
+    ],
+    "image_path": "monsters/moth.png",
+    "type": "quills",
+    "tier": 2,
+    "max_hp": 44,
+    "spd": 7,
+    "atk": 15,
+    "aim": 4
+  },
+  {
+    "name": "bee",
+    "display_name": "Chica Abeja",
+    "recipes": [
+      {
+        "parent_1": "plant",
+        "parent_2": "moth"
+      }
+    ],
+    "image_path": "monsters/bee.png",
+    "type": "quills",
+    "tier": 2,
+    "max_hp": 58,
+    "spd": 7,
+    "atk": 16,
+    "aim": 4
+  },
+  {
+    "name": "mushroom",
+    "display_name": "Chica Hongo",
+    "recipes": [
+      {
+        "parent_1": "carnivore_plant",
+        "parent_2": "poison_slime"
+      }
+    ],
+    "image_path": "monsters/mushroom.png",
+    "type": "quills",
+    "tier": 2,
+    "max_hp": 62,
+    "spd": 5,
+    "atk": 23,
+    "aim": 5
+  },
+  {
+    "name": "spider_woman",
+    "display_name": "Arácnea",
+    "recipes": [
+      {
+        "parent_1": "moth",
+        "parent_2": "mushroom"
+      }
+    ],
+    "image_path": "monsters/spider_woman.png",
+    "type": "quills",
+    "tier": 2,
+    "max_hp": 60,
+    "spd": 7,
+    "atk": 25,
+    "aim": 6
+  },
+  {
+    "name": "cake_queen",
+    "display_name": "Reina Pastel",
+    "recipes": [
+      {
+        "parent_1": "honey_slime",
+        "parent_2": "egg_slime"
+      }
+    ],
+    "image_path": "monsters/cake_queen.png",
+    "type": "none",
+    "tier": 2,
+    "max_hp": 80,
+    "spd": 7,
+    "atk": 19,
+    "aim": 5
+  },
+  {
+    "name": "fire",
+    "display_name": "Chica Fuego",
+    "recipes": [],
+    "image_path": "monsters/fire.png",
+    "type": "none",
+    "tier": 3,
+    "max_hp": 50,
+    "spd": 7,
+    "atk": 23,
+    "aim": 4
+  },
+  {
+    "name": "pumpking",
+    "display_name": "Chica Calabaza",
+    "recipes": [
+      {
+        "parent_1": "fire",
+        "parent_2": "plant"
+      }
+    ],
+    "image_path": "monsters/pumpking.png",
+    "type": "none",
+    "tier": 3,
+    "max_hp": 64,
+    "spd": 6,
+    "atk": 24,
+    "aim": 6
+  },
+  {
+    "name": "lamb",
+    "display_name": "Cordera",
+    "recipes": [],
+    "image_path": "monsters/lamb.png",
+    "type": "fur",
+    "tier": 0,
+    "max_hp": 2,
+    "spd": 0,
+    "atk": 2,
+    "aim": 0
+  },
+  {
+    "name": "pig",
+    "display_name": "Cerda",
+    "recipes": [
+      {
+        "parent_1": "slime",
+        "parent_2": "lamb"
+      }
+    ],
+    "image_path": "monsters/pig.png",
+    "type": "fur",
+    "tier": 1,
+    "max_hp": 51,
+    "spd": 2,
+    "atk": 7,
+    "aim": 2
+  },
+  {
+    "name": "mouse",
+    "display_name": "Chica Ratón",
+    "recipes": [
+      {
+        "parent_1": "lizard",
+        "parent_2": "lamb"
+      }
+    ],
+    "image_path": "monsters/mouse.png",
+    "type": "fur",
+    "tier": 1,
+    "max_hp": 27,
+    "spd": 4,
+    "atk": 13,
+    "aim": 3
+  },
+  {
+    "name": "bunny",
+    "display_name": "Coneja",
+    "recipes": [
+      {
+        "parent_1": "lamb",
+        "parent_2": "mouse"
+      }
+    ],
+    "image_path": "monsters/bunny.png",
+    "type": "fur",
+    "tier": 1,
+    "max_hp": 38,
+    "spd": 6,
+    "atk": 7,
+    "aim": 3
+  },
+  {
+    "name": "cow",
+    "display_name": "Mujer Vaca",
+    "recipes": [
+      {
+        "parent_1": "lamb",
+        "parent_2": "pig"
+      }
+    ],
+    "image_path": "monsters/cow.png",
+    "type": "fur",
+    "tier": 1,
+    "max_hp": 58,
+    "spd": 3,
+    "atk": 13,
+    "aim": 3
+  },
+  {
+    "name": "minotaur",
+    "display_name": "Minotaura",
+    "recipes": [
+      {
+        "parent_1": "pig",
+        "parent_2": "cow"
+      }
+    ],
+    "image_path": "monsters/minotaur.png",
+    "type": "fur",
+    "tier": 1,
+    "max_hp": 56,
+    "spd": 4,
+    "atk": 21,
+    "aim": 3
+  },
+  {
+    "name": "harpy",
+    "display_name": "Harpía",
+    "recipes": [],
+    "image_path": "monsters/harpy.png",
+    "type": "feathers",
+    "tier": 2,
+    "max_hp": 30,
+    "spd": 8,
+    "atk": 20,
+    "aim": 3
+  },
+  {
+    "name": "bat",
+    "display_name": "Chica Murciélago",
+    "recipes": [
+      {
+        "parent_1": "harpy",
+        "parent_2": "bunny"
+      }
+    ],
+    "image_path": "monsters/bat.png",
+    "type": "feathers",
+    "tier": 2,
+    "max_hp": 42,
+    "spd": 6,
+    "atk": 29,
+    "aim": 3
+  },
+  {
+    "name": "basilisk",
+    "display_name": "Basilisco",
+    "recipes": [
+      {
+        "parent_1": "medusa",
+        "parent_2": "harpy"
+      }
+    ],
+    "image_path": "monsters/basilisk.png",
+    "type": "feathers",
+    "tier": 2,
+    "max_hp": 74,
+    "spd": 9,
+    "atk": 32,
+    "aim": 5
+  },
+  {
+    "name": "phoenyx",
+    "display_name": "Fénix",
+    "recipes": [
+      {
+        "parent_1": "fire",
+        "parent_2": "harpy"
+      }
+    ],
+    "image_path": "monsters/phoenyx.png",
+    "type": "feathers",
+    "tier": 3,
+    "max_hp": 74,
+    "spd": 9,
+    "atk": 24,
+    "aim": 6
+  }
+]

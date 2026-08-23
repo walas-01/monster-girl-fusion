@@ -8,12 +8,7 @@ function PortalPage() {
 
   return (
         <div className="min-h-screen bg-gray-900 text-gray-300">
-
             <div className="w-full min-h-screen md:min-h-[844px] md:max-w-[390px] bg-black md:shadow-2xl overflow-hidden flex flex-col">
-
-                <header className="p-4 bg-indigo-700 font-bold text-center">
-                    Excursion
-                </header>
 
                 <main className="flex-1 overflow-y-auto">
 
@@ -36,51 +31,57 @@ function PortalPage() {
 }
 
 
+
+
 function ExpeditionItem({dificulty,iconPath}){
 
-    let zone;
-    let dif;
-    let tier;
-    let color;
+    const DIFFICULTY_CONFIG = {
+        easy: {
+            label: "Fácil",
+            zone: "Granja",
+            tier: 1,
+            bgColor: "bg-emerald-600",
+        },
+        normal: {
+            label: "Normal",
+            zone: "Bosque",
+            tier: 2,
+            bgColor: "bg-blue-600",
+        },
+        hard: {
+            label: "Dificil",
+            zone: "Cueva",
+            tier: 3,
+            bgColor: "bg-rose-600",
+        },
+        very_hard: {
+            label: "Muy Difícil",
+            zone: "Castillo",
+            tier: 4,
+            bgColor: "bg-purple-600",
+        },
+    };
 
-    if(dificulty == "easy"){
-        dif = "Fácil";
-        zone = "Granja";
-        tier = 1;
-        color = "emerald"
-    }else if(dificulty == "normal"){
-        dif = "Normal";
-        zone = "Bosque";
-        tier = 2;
-        color = "blue"
-    }else if(dificulty == "hard"){
-        dif = "Dificil";
-        zone = "Cueva";
-        tier = 3;
-        color = "rose"
-    }else if(dificulty == "very_hard"){
-        dif = "Muy Difícil";
-        zone = "Castillo";
-        tier = 4;
-        color = "purple"
-    }
 
+    const config = DIFFICULTY_CONFIG[dificulty] || DIFFICULTY_CONFIG.easy;
+
+    console.log(config)
 
     return(
         <div className="bg-slate-700 rounded-l-xl flex justify-between p-2">
 
             <div className="flex gap-2">
 
-                <div className={`bg-${color}-600 rounded-l-xl`}>
+                <div className={`${config.bgColor} rounded-l-xl`}>
                     <img src={getImage(`icons/${iconPath}.png`)}alt={"dificulty"} className=" h-16 m-3"/>
                 </div>
 
                 <div className="flex flex-col justify-center">
                     <p className="font-bold flex items-center">
-                        {zone} - <span className="font-light text-sm ml-1"> {dif}</span> 
+                        {config.zone} - <span className="font-light text-sm ml-1"> {config.label}</span> 
                     </p>
                     <p className="font-light text-sm">
-                        Consigue monstruos de <span className="font-bold"> Tier {tier}</span> 
+                        Consigue monstruos de <span className="font-bold"> Tier {config.tier}</span> 
                     </p>
                 </div>
 
@@ -88,7 +89,7 @@ function ExpeditionItem({dificulty,iconPath}){
 
             </div>
 
-            <div className={`bg-${color}-600 text-gray-300 px-3 py-6 text-xl font-extrabold flex`}>
+            <div className={`${config.bgColor} text-gray-300 px-3 py-6 text-xl font-extrabold flex`}>
                 <img src={getImage("icons/icon_arrow.png")} alt="arrow" className="w-3"/>
             </div>
             

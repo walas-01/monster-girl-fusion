@@ -5,6 +5,11 @@ import {getMonsterInfoById} from "../services/api.js"
 
 import {getImage} from "../imageHandler.js"
 
+import TypeTag from "../components/MonsterItem/TypeTag.jsx";
+
+
+
+
 function MonsterDetailPage() { // ------------------------------------------------------ main
     const { id } = useParams();
 
@@ -15,6 +20,8 @@ function MonsterDetailPage() { // ----------------------------------------------
     useEffect(() => {
         getMonster();
     }, [id]);
+
+
 
     async function getMonster() {
         try {
@@ -39,10 +46,6 @@ function MonsterDetailPage() { // ----------------------------------------------
         <div className="min-h-screen bg-gray-600 text-gray-300">
             <div className="w-full min-h-screen md:min-h-[844px] md:max-w-[390px] bg-black not-even:md:shadow-2xl overflow-hidden flex flex-col">
 
-                <header className="p-3 bg-indigo-800 font-bold text-center text-xl">
-                    Chica Monstruo
-                </header>
-
                 <main className="">
                     {loading ? (
                         <p>Loading...</p>
@@ -64,9 +67,22 @@ function DetailScreen({monster}){
 
                 <img src={getImage(monster.image_path)}alt={monster.name} className="mb-4 sprite-borde object-contain w-1/2"/>
 
-                <div className="mt-2 w-1/2 flex flex-col text-center">
-                    <p className="text-xl font-bold">{monster.nickname}</p>
-                    <span className="text-sm text-gray-400">Tier {monster.tier} {monster.display_name}</span>
+                <div className="mt-2 w-1/2 flex flex-col">
+
+                    <div className=" flex flex-col items-center">
+                        <p className="text-xl font-bold">{monster.display_name}</p>
+
+                        <div className="flex gap-4 items-center">
+                            <TypeTag type={monster.type}/>
+
+                            <span className="text-sm font-bold">
+                                Tier {monster.tier} 
+                            </span>
+
+                        </div>
+                    </div>
+
+                    
 
                     <div className="mt-4 flex flex-col gap-3 w-full">
                         <Stat stat={"HP"} value={monster.max_hp} max_value={180} img={"icons/icon_hp.png"}/>

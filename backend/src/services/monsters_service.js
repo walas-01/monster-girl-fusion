@@ -1,6 +1,5 @@
 const db = require("../db/database.js");
 
-
 /// -------------------------------------------------------------------------------------- Monster Encyclopedia --- ///
 
 function uploadMonstersToEncyclopedia(monsters) {
@@ -14,8 +13,8 @@ function uploadMonstersToEncyclopedia(monsters) {
 
         const insertMonster = db.prepare(`
             INSERT INTO monster_encyclopedia
-            (name, display_name, tier, max_hp, atk, spd, aim, image_path)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (name, display_name, type,tier, max_hp, atk, spd, aim, image_path)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)
         `);
 
         const insertRecipe = db.prepare(`
@@ -30,7 +29,7 @@ function uploadMonstersToEncyclopedia(monsters) {
 
         for (const monsterData of monsters) {
             const {
-                name, display_name,recipes,image_path,tier,max_hp,spd,atk,aim} = monsterData;
+                name, display_name,recipes,image_path,type,tier,max_hp,spd,atk,aim} = monsterData;
 
             console.log("[monsters_service]: processing monster: " + name);
 
@@ -44,7 +43,7 @@ function uploadMonstersToEncyclopedia(monsters) {
             }
 
             // Insert monster into encyclopedia
-            insertMonster.run(name,display_name,tier,max_hp,atk,spd, aim,image_path);
+            insertMonster.run(name,display_name,type,tier,max_hp,atk,spd, aim,image_path);
 
             added.push(name);
 
@@ -200,6 +199,7 @@ function getMonstersByPlayerUuid(uuid) { //! ----- GET all by player uuid
             monsters.id,
             monster_encyclopedia.name,
             monster_encyclopedia.display_name,
+            monster_encyclopedia.type,
             monster_encyclopedia.tier,
             monsters.nickname,
             monster_encyclopedia.max_hp,
@@ -230,6 +230,7 @@ function getMonsterById(monsterId) { //! ----- GET a monster by Id and its recip
             monsters.id,
             monster_encyclopedia.name,
             monster_encyclopedia.display_name,
+            monster_encyclopedia.type,
             monster_encyclopedia.tier,
             monsters.nickname,
             monster_encyclopedia.max_hp,

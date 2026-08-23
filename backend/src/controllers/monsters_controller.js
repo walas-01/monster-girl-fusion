@@ -3,13 +3,13 @@ const monstersService = require("../services/monsters_service");
 /// ------------------------------------------------------------ Monster Encyclopedia --- ///
 
 function uploadMonstersToEncyclopedia(req, res) {
-    const minsterList = req.body;
+    const monsterList = req.body;
 
     // VALIDATION 
     // here I should validate the incoming data to match the type of variable and length
 
 
-    const {added,skipped} = monstersService.uploadMonstersToEncyclopedia(minsterList);
+    const {added,skipped} = monstersService.uploadMonstersToEncyclopedia(monsterList);
 
     res.status(201).json({
         message: "Monster added to the encyclopedia!",

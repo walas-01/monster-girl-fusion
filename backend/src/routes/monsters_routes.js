@@ -15,7 +15,6 @@ router.get("/encyclopedia", monstersController.getAllMonstersFromEncyclopedia);
 
 
 
-
 /// --- Monster Recipes --- ///
 
 // GET
@@ -23,7 +22,6 @@ router.get("/recipes", monstersController.getAllRecipes);
 
 // PUT
 router.put("/recipes", monstersController.updateMonsterRecipes);
-
 
 
 

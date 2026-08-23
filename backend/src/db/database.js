@@ -9,6 +9,7 @@ db.exec(`
         name TEXT PRIMARY KEY NOT NULL UNIQUE,
         display_name TEXT NOT NULL,
 
+        type TEXT NOT NULL,
         tier INTEGER NOT NULL,
 
         max_hp INTEGER NOT NULL,
@@ -45,7 +46,13 @@ db.exec(`
     CREATE TABLE IF NOT EXISTS players (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
-        uuid TEXT NOT NULL UNIQUE
+        uuid TEXT NOT NULL UNIQUE,
+
+        monster_slots INTEGER NOT NULL DEFAULT 5,
+
+        wood INTEGER NOT NULL DEFAULT 0,
+        stone INTEGER NOT NULL DEFAULT 0,
+        food INTEGER NOT NULL DEFAULT 0
     );
 `);
 
