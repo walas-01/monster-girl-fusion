@@ -9,7 +9,9 @@ const router = express.Router();
 router.post("/", playerController.createPlayer);
 
 // GET
-router.get("/", playerController.getAllPlayers);
+router.get("/", playerController.getAllPlayers); // get all
+
+router.get("/:uuid",playerController.getPlayerByUuid); // get data by uuid
 
 
 

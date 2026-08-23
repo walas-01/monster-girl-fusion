@@ -30,11 +30,23 @@ function getAllPlayers() {
 
 
 
-
-
+function getPlayerByUuid(uuid) {
+    return db.prepare(`
+        SELECT
+            uuid,
+            username,
+            monster_slots,
+            wood,
+            stone,
+            food
+        FROM players
+        WHERE uuid = ?
+    `).get(uuid);
+}
 
 
 module.exports = {
     createPlayer,
-    getAllPlayers
+    getAllPlayers,
+    getPlayerByUuid
 };

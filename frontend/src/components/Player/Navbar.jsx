@@ -4,8 +4,10 @@ import { usePlayer } from "../../context/PlayerContext";
 
 export function Navbar() {
 
-    const {playerUuid,username} = usePlayer();
+    const {playerUuid,player} = usePlayer();
 
+
+    console.log(player)
 
     return (
         
@@ -14,7 +16,7 @@ export function Navbar() {
 
             {playerUuid ? (
                 <p>
-                    {username}
+                    {player?.username} 
                 </p>
             ) : (
                 <p>Guest</p>

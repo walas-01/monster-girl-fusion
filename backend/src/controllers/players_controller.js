@@ -25,8 +25,22 @@ function getAllPlayers(req, res) {
 }
 
 
+function getPlayerByUuid(req, res) {
+    const { uuid } = req.params;
+    const player = playerService.getPlayerByUuid(uuid);
+
+    if (!player) {
+        return res.status(404).json({
+            message: "Player not found"
+        });
+    }
+
+    res.json({ player });
+}
+
 
 module.exports = {
     createPlayer,
-    getAllPlayers
+    getAllPlayers,
+    getPlayerByUuid
 };

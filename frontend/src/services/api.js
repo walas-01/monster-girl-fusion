@@ -30,12 +30,19 @@ export async function getMonsterInfoById(monsterId) {
 
 
 
-
-
 export async function getPlayerMonsters(uuid) {
     const response = await fetch(`/api/monsters/${uuid}`);
     if (!response.ok) {
         throw new Error("Failed to get monsters");
+    }
+
+    return await response.json();
+}
+
+export async function getPlayerByUuid(uuid){
+    const response = await fetch(`/api/players/${uuid}`);
+    if (!response.ok) {
+        throw new Error("Failed to get player data");
     }
 
     return await response.json();

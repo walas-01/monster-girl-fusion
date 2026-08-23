@@ -15,47 +15,26 @@ import { getImage } from "../imageHandler.js";
 
 
 function HomePage() {
-    const { playerUuid,username, playerLoading,createNewPlayer } = usePlayer();
 
-
-    const [myMonsters, setMyMonsters] = useState([]);
-  
+    const { playerUuid, playerLoading, monsters,createNewPlayer } = usePlayer();
 
     const [usernameInput, setUsernameInput] = useState("");
     const [creatingPlayer, setCreatingPlayer] = useState(false);
 
-    
 
-   useEffect(() => {
-        if (!playerUuid) {return;}
-
-        getMyMonsters();
-    }, [playerUuid]);
         
 
-    async function getMyMonsters() {  // if there us uuid, get monsters
-        try {
-            const response = await getPlayerMonsters(playerUuid);
-
-            setMyMonsters(response.monsters);
-        } catch (error) {
-            console.error(error);
-        }
-    }
 
 
-    async function handleCreatePlayer() { // if no uuid found, make new player
+    async function handleCreatePlayer() {
         if (!usernameInput.trim()) {
             return;
         }
 
         try {
             setCreatingPlayer(true);
+            await createNewPlayer(usernameInput);
 
-            const player = await createNewPlayer(usernameInput);
-            const response = await getPlayerMonsters(player.uuid);
-
-            setMyMonsters(response.monsters);
         } catch (error) {
             console.error(error);
         } finally {
@@ -101,7 +80,7 @@ function HomePage() {
                     ) : !playerUuid ? (
                         <CreatePlayer username={usernameInput}setUsername={setUsernameInput} onCreate={handleCreatePlayer}loading={creatingPlayer}/>
                     ) : (
-                        <MonsterList monsters={myMonsters} />
+                        <MonsterList monsters={monsters} />
                     )}
                 </main>
             </div>

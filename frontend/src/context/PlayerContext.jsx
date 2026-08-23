@@ -2,18 +2,32 @@ import {createContext,useContext,useEffect,useRef,useState} from "react";
 
 import { createPlayer } from "../services/api";
 
+import { getPlayerMonsters, getPlayerByUuid} from "../services/api";
+
 const PlayerContext = createContext(null);
 
 export function PlayerProvider({ children }) {
 
     const [playerUuid, setPlayerUuid] = useState(null);
-    const [username, setUsername] = useState("");
+
+    const [player, setPlayer] = useState(null);
     const [playerLoading, setPlayerLoading] = useState(true);
+
+
+    const [monsters, setMonsters] = useState([]);
 
     const initializing = useRef(false);
 
     useEffect(() => {
+        if (!playerUuid) {
+            return;
+        }
 
+        refreshMonsters();
+    }, [playerUuid]);
+
+
+    useEffect(() => {
         if (initializing.current) {
             return;
         }
@@ -22,22 +36,43 @@ export function PlayerProvider({ children }) {
         initializePlayer();
     }, []);
 
+    useEffect(() => {
+        const storedUuid = localStorage.getItem("playerUuid");
+
+        if (!storedUuid) {
+            setPlayerLoading(false);
+            return;
+        }
+
+        loadPlayer(storedUuid);
+    }, []);
+
+
+    
+    async function loadPlayer(uuid) {
+        try {
+            const response = await getPlayerByUuid(uuid);
+
+            setPlayer(response.player);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+
 
     async function initializePlayer() {
 
-        console.log("HEY")
+
         try {
             const storedUuid = localStorage.getItem("playerUuid");
-            const storedUsername = localStorage.getItem("username");
-
             if (!storedUuid) {return;}
             
             setPlayerUuid(storedUuid);
-            setUsername(storedUsername || "");
         } catch (error) {
             console.error(error);
         } finally {
-            console.log("WAKA")
+
             setPlayerLoading(false);
         }
     }
@@ -56,14 +91,7 @@ export function PlayerProvider({ children }) {
                 player.uuid
             );
 
-            localStorage.setItem(
-                "username",
-                player.username
-            );
-
             setPlayerUuid(player.uuid);
-            setUsername(player.username);
-
             return player;
         } catch (error) {
             console.error(error);
@@ -72,13 +100,49 @@ export function PlayerProvider({ children }) {
     }
 
 
+    async function refreshMonsters(uuid = playerUuid) {
+        if (!uuid) {
+            return;
+        }
+
+        try {
+            const response = await getPlayerMonsters(uuid);
+
+            setMonsters(response.monsters);
+
+        } catch (error) {
+            console.error(error);
+        } 
+    }
+
+
+    async function refreshPlayer() {
+        if (!player?.uuid) {
+            return;
+        }
+
+        try {
+            const response = await getPlayerByUuid(player.uuid);
+
+            setPlayer(response.player);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+
+
     return (
         <PlayerContext.Provider
             value={{
                 playerUuid,
-                username,
                 playerLoading,
-                createNewPlayer
+                createNewPlayer,
+                monsters,
+                refreshMonsters,
+
+                player,
+                refreshPlayer
             }}
         >
             {children}
