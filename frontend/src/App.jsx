@@ -4,11 +4,15 @@ import { BrowserRouter, Routes, Route } from "react-router";
 
 import HomePage from "./pages/HomePage";
 import MonsterDetailPage from "./pages/MonsterDetailPage";
+import PortalPage from './pages/PortalPage';
 
 function App() {
     return (
         <BrowserRouter>
             <Routes>
+
+                <Route path="/portal" element={<PortalPage />} />
+
 
                 <Route path="/" element={<HomePage />} />
 

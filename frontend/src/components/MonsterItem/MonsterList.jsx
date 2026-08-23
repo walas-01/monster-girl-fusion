@@ -4,13 +4,12 @@ import { useState } from 'react'
 import MonsterItem from './MonsterItem.jsx'
 
 function MonsterList({ monsters }) {
-    const [monsterList, setMonsterList] = useState(monsters)
-
 
     return (
-        <div className="my-2 p-1 grid grid-cols-2 gap-2">
+        
+        <div className="my-2 p-2 flex flex-col gap-4">
 
-            {monsterList.map((monster, index) => (
+            {monsters.map((monster, index) => (
                 <MonsterItem key={index} monster={monster} />
             ))}
 
