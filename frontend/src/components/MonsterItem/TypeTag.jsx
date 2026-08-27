@@ -8,6 +8,11 @@ const TYPE_CONFIG = {
     text: "Normal",
     color: "bg-slate-400",
   },
+  fur: {
+    image_path: "icons/icon_fur.png",
+    text: "Peluda",
+    color: "bg-orange-400",
+  },
   feathers: {
     image_path: "icons/icon_feather.png",
     text: "Alada",
@@ -40,7 +45,7 @@ function TypeTag({ type, showText = true }) {
 
   return (
     <div
-      className={`${config.color} text-white text-xs flex items-center justify-center w-fit rounded-xl p-1 ${
+      className={`${config.color}  text-white text-xs flex items-center justify-center w-fit rounded-xl p-1 ${
         showText ? "px-2 gap-1" : "rounded-full"
       }`}
     >

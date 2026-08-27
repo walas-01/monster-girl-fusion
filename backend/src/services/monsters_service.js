@@ -234,17 +234,41 @@ function fuseMonsters(parent1Id, parent2Id, playerId) { //! --------------------
         // 3. Create the resulting monster
         const resultMonster = createMonster(recipe.result, null,playerId);
 
+
         // 4. Delete the two original monsters
         const deleteMonster = db.prepare(`
             DELETE FROM monsters
             WHERE id = ? AND owner_id = ?
         `);
 
+
         deleteMonster.run(parent1Id, playerId);
         deleteMonster.run(parent2Id, playerId);
 
-        // 5. Return the newly created monster
-        return resultMonster;
+        // 5. Get the complete monster information
+        const getCreatedMonster = db.prepare(`
+            SELECT
+                monsters.id,
+                monster_encyclopedia.name,
+                monster_encyclopedia.display_name,
+                monster_encyclopedia.tier,
+                monster_encyclopedia.type,
+                monsters.nickname,
+                monster_encyclopedia.max_hp,
+                monster_encyclopedia.atk,
+                monster_encyclopedia.spd,
+                monster_encyclopedia.aim,
+                monsters.owner_id,
+                monster_encyclopedia.image_path
+            FROM monsters
+
+            JOIN monster_encyclopedia
+                ON monsters.species = monster_encyclopedia.name
+
+            WHERE monsters.id = ?
+        `).get(resultMonster.id);
+
+        return getCreatedMonster;
     });
 
     return transaction();
