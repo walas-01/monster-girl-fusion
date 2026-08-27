@@ -190,6 +190,70 @@ function createMonster(species, nickname, playerId) {
 }
 
 
+
+
+
+function fuseMonsters(parent1Id, parent2Id, playerId) { //! ------------------------- Fuse two monsters
+    const transaction = db.transaction(() => {
+
+        // 1. Get both monsters making sure they belong to the player
+        const getMonster = db.prepare(`
+            SELECT id, species, nickname
+            FROM monsters
+            WHERE id = ? AND owner_id = ?
+        `);
+
+        const parent1 = getMonster.get(parent1Id, playerId);
+        const parent2 = getMonster.get(parent2Id, playerId);
+
+        // validations
+        if (!parent1) {
+            throw new Error(`Monster ${parent1Id} not found or does not belong to player`);
+        }
+        if (!parent2) {
+            throw new Error(`Monster ${parent2Id} not found or does not belong to player`);
+        }
+        if (parent1Id === parent2Id) {
+            throw new Error("A monster cannot be fused with itself");
+        }
+
+        // 2. Find a recipe using their species
+        const recipe = db.prepare(`
+            SELECT result
+            FROM monster_recipes
+            WHERE
+                (parent_1 = ? AND parent_2 = ?)
+                OR
+                (parent_1 = ? AND parent_2 = ?)
+            LIMIT 1
+        `).get(parent1.species,parent2.species,parent2.species,parent1.species);
+
+
+        if (!recipe) {return null;} // if there is no combination
+        
+        // 3. Create the resulting monster
+        const resultMonster = createMonster(recipe.result, null,playerId);
+
+        // 4. Delete the two original monsters
+        const deleteMonster = db.prepare(`
+            DELETE FROM monsters
+            WHERE id = ? AND owner_id = ?
+        `);
+
+        deleteMonster.run(parent1Id, playerId);
+        deleteMonster.run(parent2Id, playerId);
+
+        // 5. Return the newly created monster
+        return resultMonster;
+    });
+
+    return transaction();
+}
+
+
+
+
+
 //! ------------------------------------------------------------- |||||[ GET ]||||
 
 
@@ -285,73 +349,10 @@ function getMonsterById(monsterId) { //! ----- GET a monster by Id and its recip
             tier: recipe.parent2_tier
         }
     }));
-
-
     return monster;
 }
 
 
-
-
-
-function fuseMonsters(parent1Id, parent2Id, playerId) {
-    const transaction = db.transaction(() => {
-        // 1. Get both monsters making sure they belong to the player
-        const getMonster = db.prepare(`
-            SELECT id, species, nickname
-            FROM monsters
-            WHERE id = ? AND owner_id = ?
-        `);
-
-        const parent1 = getMonster.get(parent1Id, playerId);
-        const parent2 = getMonster.get(parent2Id, playerId);
-
-        // validations
-        if (!parent1) {
-            throw new Error(`Monster ${parent1Id} not found or does not belong to player`);
-        }
-        if (!parent2) {
-            throw new Error(`Monster ${parent2Id} not found or does not belong to player`);
-        }
-        if (parent1Id === parent2Id) {
-            throw new Error("A monster cannot be fused with itself");
-        }
-
-        // 2. Find a recipe using their species
-        const recipe = db.prepare(`
-            SELECT result
-            FROM monster_recipes
-            WHERE
-                (parent_1 = ? AND parent_2 = ?)
-                OR
-                (parent_1 = ? AND parent_2 = ?)
-            LIMIT 1
-        `).get(parent1.species,parent2.species,parent2.species,parent1.species);
-
-
-        if (!recipe) {
-            throw new Error(
-                `No fusion recipe exists for ${parent1.species} + ${parent2.species}`
-            );
-        }
-        // 3. Create the resulting monster
-        const resultMonster = createMonster(recipe.result, null,playerId);
-
-        // 4. Delete the two original monsters
-        const deleteMonster = db.prepare(`
-            DELETE FROM monsters
-            WHERE id = ? AND owner_id = ?
-        `);
-
-        deleteMonster.run(parent1Id, playerId);
-        deleteMonster.run(parent2Id, playerId);
-
-        // 5. Return the newly created monster
-        return resultMonster;
-    });
-
-    return transaction();
-}
 
 
 

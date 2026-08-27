@@ -19,7 +19,7 @@ function MonsterItem({monster}) {
 function ItemType2({monster}) {
 
   return (
-        <div className="bg-slate-700  rounded-md gap-2 flex items-center justify-between" > 
+        <div className="bg-slate-800  rounded-md gap-2 flex items-center justify-between" > 
 
             <div className="gap-2 flex items-center">
                 <div className=" rounded-l w-20">
@@ -62,8 +62,8 @@ function ItemType2({monster}) {
             </div>
         
 
-            <div className=" bg-indigo-600 text-gray-300 px-3 py-6 mr-1 rounded-r-md text-xl font-extrabold">
-                <img src={getImage("icons/icon_arrow.png")} alt="caca" className="w-3"/>
+            <div className=" bg-indigo-600 text-gray-300 px-3 py-2 mr-3 rounded-full font-extrabold">
+                <img src={getImage("icons/icon_arrow.png")} alt="caca" className="w-2"/>
             </div>
 
         </div>

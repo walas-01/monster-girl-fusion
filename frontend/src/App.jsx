@@ -12,8 +12,6 @@ import { PlayerProvider } from './context/PlayerContext';
 
 
 function App() {
-
-
     return (
         <BrowserRouter>
             <PlayerProvider>

@@ -1,4 +1,5 @@
 const monstersService = require("../services/monsters_service");
+const playerService = require("../services/players_service")
 
 /// ------------------------------------------------------------ Monster Encyclopedia --- ///
 
@@ -71,7 +72,48 @@ function createMonster(req, res) {
 
 
 
-function getMonstersByPlayerUuid(req, res) {
+function fuseMonsters(req, res) { //! ----------------------------------------------- Fuse
+    const {parent1Id,parent2Id,playerUuid} = req.body;
+
+    try {
+        const player = playerService.getPlayerByUuid(playerUuid);
+
+        if (!player) {
+            return res.status(404).json({
+                message: "Player not found"
+            });
+        }
+
+        console.log("[POST Fusion]:")
+        console.log(`-parent 1 id: ${parent1Id} `)
+        console.log(`-parent 2 id: ${parent2Id} `)
+        console.log(`-player id id: ${player.id} `)
+
+        const monster = monstersService.fuseMonsters(parent1Id, parent2Id, player.id);
+
+        if (monster === null) {
+            return res.status(400).json({
+                message: "No recipe matches that fusion"
+            });
+        }
+
+        res.status(201).json({
+            message: "Fusion successful!",
+            monster
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(400).json({
+            message: error.message
+        });
+    }
+}
+
+
+
+
+function getMonstersByPlayerUuid(req, res) { //! ----------------------------------------------- GET monsters by playerUuid
 
     try{
         const { uuid } = req.params;
@@ -113,22 +155,7 @@ function getMonsterInfoById(req,res){
 } 
 
 
-function fuseMonsters(req, res) {
-    const {parent1Id, parent2Id, playerId} = req.body;
 
-    try {
-        const resultMonster = monstersService.fuseMonsters(parent1Id, parent2Id, playerId);  
-
-        res.status(200).json({
-            message: "Monsters fused successfully!",
-            monster: resultMonster
-        });
-    } catch (error) {
-        res.status(400).json({
-            error: error.message
-        });
-    }
-}
 
 
 

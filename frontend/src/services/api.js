@@ -47,3 +47,28 @@ export async function getPlayerByUuid(uuid){
 
     return await response.json();
 }
+
+
+
+export async function fuseMonsters(parent1Id, parent2Id, playerUuid) {
+    const response = await fetch("/api/monsters/fuse", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+            parent1Id,
+            parent2Id,
+            playerUuid
+        })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Fusion failed");
+    }
+
+    return data;
+}

@@ -1,6 +1,5 @@
 
-import { useEffect, useState,useRef } from "react";
-import {getPlayerMonsters} from "../services/api.js";
+import { useState } from "react";
 import { usePlayer } from "../context/PlayerContext.jsx";
 import { Link } from "react-router";
 

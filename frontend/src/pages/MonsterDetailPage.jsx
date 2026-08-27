@@ -43,8 +43,8 @@ function MonsterDetailPage() { // ----------------------------------------------
 
 
     return (
-        <div className="min-h-screen bg-gray-600 text-gray-300">
-            <div className="w-full min-h-screen md:min-h-[844px] md:max-w-[390px] bg-black not-even:md:shadow-2xl overflow-hidden flex flex-col">
+        <div className=" bg-gray-600 text-gray-300">
+            <div className="w-full md:min-h-[844px] md:max-w-[390px] bg-black not-even:md:shadow-2xl overflow-hidden flex flex-col">
 
                 <main className="">
                     {loading ? (
@@ -63,7 +63,7 @@ function MonsterDetailPage() { // ----------------------------------------------
 function DetailScreen({monster}){
     return(
         <div className="flex-col m-4">
-            <div className="bg-slate-700  rounded-md flex">
+            <div className="bg-slate-800  rounded-md flex">
 
                 <img src={getImage(monster.image_path)}alt={monster.name} className="mb-4 sprite-borde object-contain w-1/2"/>
 
@@ -152,7 +152,7 @@ function RecipeItem({recipe,resultMonster}){
 
 
     return(
-        <div className="flex justify-around items-center bg-slate-700 rounded-md pb-4  text-center">
+        <div className="flex justify-around items-center bg-slate-800 rounded- pb-4  text-center">
 
             <div className="flex flex-col items-center">
                 <img src={getImage(recipe.parent1.image_path)}alt={recipe.parent1.display_name} className="mb-2 sprite-borde w-20"/>

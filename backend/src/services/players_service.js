@@ -33,6 +33,7 @@ function getAllPlayers() {
 function getPlayerByUuid(uuid) {
     return db.prepare(`
         SELECT
+            id,
             uuid,
             username,
             monster_slots,
