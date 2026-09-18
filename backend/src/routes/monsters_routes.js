@@ -1,8 +1,8 @@
 const express = require("express");
+const router = express.Router();
 
 const monstersController = require("../controllers/monsters_controller");
 
-const router = express.Router();
 
 
 /// -- Monster Encyclopedia -- ///

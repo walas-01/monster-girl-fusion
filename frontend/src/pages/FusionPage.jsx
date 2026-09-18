@@ -10,7 +10,6 @@ import { Stat } from "../components/MonsterItem/Stat.jsx";
 
 function FusionPage() {
     const { monsters,playerUuid,refreshMonsters,refreshPlayer } = usePlayer();
-
     const [selectedMonsters,setSelectedMonsters] = useState([]);
 
     const [fusionResult, setFusionResult] = useState(null);

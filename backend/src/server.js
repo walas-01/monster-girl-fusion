@@ -6,6 +6,7 @@ const express = require("express");
 // routes
 const playersRoutes = require("./routes/players_routes.js");
 const monstersRoutes = require("./routes/monsters_routes.js");
+const enemiesRoutes = require("./routes/enemies_routes.js");
 
 // Config and 
 const app = express();
@@ -19,7 +20,7 @@ app.use(express.json()); // If JSON in the request body, parse it and make it av
 
 app.use("/api/monsters", monstersRoutes);
 app.use("/api/players", playersRoutes);
-
+app.use("/api/enemies", enemiesRoutes);
 
 // --------------------
 

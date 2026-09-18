@@ -40,8 +40,6 @@ db.exec(`
     );
 `);
 
-
-
 db.exec(`
     CREATE TABLE IF NOT EXISTS players (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,6 +72,23 @@ db.exec(`
 
         FOREIGN KEY (owner_id)
             REFERENCES players(id)
+    );
+`);
+
+db.exec(`
+    CREATE TABLE IF NOT EXISTS enemies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        display_name TEXT NOT NULL,
+
+        difficulty INTEGER NOT NULL,
+
+        max_hp INTEGER NOT NULL,
+        atk INTEGER NOT NULL,
+        spd INTEGER NOT NULL,
+        aim INTEGER NOT NULL,
+
+        image_path TEXT NOT NULL
     );
 `);
 
