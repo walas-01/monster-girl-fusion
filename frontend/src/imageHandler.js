@@ -6,8 +6,13 @@ const images = import.meta.glob(
   }
 );
 
+const IMAGE_ALIASES = {
+  "monsters/pumpking.png": "monsters/pumpkin.png",
+  "monsters/phoenyx.png": "monsters/phoenix.png",
+};
 
 export function getImage(path) {
-  return images[`./assets/${path}`];
+  const resolvedPath = IMAGE_ALIASES[path] || path;
+  return images[`./assets/${resolvedPath}`];
 }
 

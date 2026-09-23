@@ -1,4 +1,11 @@
 const enemiesService = require('../services/enemies_service');
+const { conflict } = require("../http/errors.js");
+const {
+    requireNonnegativeInteger,
+    requirePositiveInteger,
+    requireRecord,
+    requireString
+} = require("../http/validation.js");
 
 
 function getAllEnemies(req,res){
@@ -10,18 +17,38 @@ function getAllEnemies(req,res){
 }
 
 
-function uploadEnemy(req, res) {
-    const enemy = req.body;
+function uploadEnemy(req, res, next) {
+    try {
+        requireRecord(req.body);
 
-    // VALIDATION 
-    // here I should validate the incoming data to match the type of variable and length
+        const textFields = ["name", "displayName", "imagePath"];
+        const normalizedEnemy = {...req.body};
 
-    const newEnemy = enemiesService.uploadEnemy(enemy);
+        for (const field of textFields) {
+            normalizedEnemy[field] = requireString(req.body[field], field);
+        }
 
-    res.status(201).json({
-        message: "New enemy added!",
-        enemy: newEnemy
-    });
+        const nonnegativeFields = ["difficulty", "atk", "spd", "aim"];
+
+        for (const field of nonnegativeFields) {
+            normalizedEnemy[field] = requireNonnegativeInteger(req.body[field], field);
+        }
+
+        normalizedEnemy.maxHp = requirePositiveInteger(req.body.maxHp, "maxHp");
+
+        const newEnemy = enemiesService.uploadEnemy(normalizedEnemy);
+
+        res.status(201).json({
+            message: "New enemy added!",
+            enemy: newEnemy
+        });
+    } catch (error) {
+        if (error.code === "SQLITE_CONSTRAINT_UNIQUE") {
+            return next(conflict("An enemy with that name already exists"));
+        }
+
+        next(error);
+    }
 }
 
 

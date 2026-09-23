@@ -1,6 +1,6 @@
 import './App.css'
 
-import { BrowserRouter, Routes, Route } from "react-router";
+import { BrowserRouter, Link, Routes, Route } from "react-router";
 
 import HomePage from "./pages/HomePage";
 import MonsterDetailPage from "./pages/MonsterDetailPage";
@@ -8,7 +8,7 @@ import PortalPage from './pages/PortalPage';
 import FusionPage from './pages/FusionPage';
 import { Navbar } from './components/Player/Navbar';
 
-import { PlayerProvider } from './context/PlayerContext';
+import { PlayerProvider } from './context/PlayerContext.jsx';
 
 
 function App() {
@@ -28,9 +28,20 @@ function App() {
 
                     <Route path="/monster/:id"element={<MonsterDetailPage />}/>
 
+                    <Route path="*" element={<NotFound />}/>
+
                 </Routes>
             </PlayerProvider>
         </BrowserRouter>
+    );
+}
+
+function NotFound() {
+    return (
+        <main>
+            <h1>Página no encontrada</h1>
+            <Link to="/">Volver al inicio</Link>
+        </main>
     );
 }
 

@@ -1,6 +1,3 @@
-import { useState } from 'react'
-
-
 import MonsterItem from './MonsterItem.jsx'
 
 function MonsterList({ monsters }) {
@@ -9,8 +6,8 @@ function MonsterList({ monsters }) {
         
         <div className="my-2 p-2 flex flex-col gap-4">
 
-            {monsters.map((monster, index) => (
-                <MonsterItem key={index} monster={monster} />
+            {monsters.map(monster => (
+                <MonsterItem key={monster.id} monster={monster} />
             ))}
 
         </div>

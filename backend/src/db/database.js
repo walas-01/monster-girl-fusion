@@ -1,9 +1,12 @@
 const Database = require("better-sqlite3");
+const { getDatabasePath } = require("../config.js");
 
-const db = new Database("game.db");
+const databasePath = getDatabasePath();
+const db = new Database(databasePath, { timeout: 5_000 });
 
 db.pragma("foreign_keys = ON"); //? this line enables foreign key usage, not on by default
 
+const initializeDatabase = db.transaction(() => {
 db.exec(`
     CREATE TABLE IF NOT EXISTS monster_encyclopedia (
         name TEXT PRIMARY KEY NOT NULL UNIQUE,
@@ -37,6 +40,34 @@ db.exec(`
 
         FOREIGN KEY (result)
             REFERENCES monster_encyclopedia(name)
+    );
+`);
+
+const conflictingRecipes = db.prepare(`
+    SELECT
+        MIN(parent_1, parent_2) AS first_parent,
+        MAX(parent_1, parent_2) AS second_parent,
+        COUNT(*) AS recipe_count
+    FROM monster_recipes
+    GROUP BY
+        MIN(parent_1, parent_2),
+        MAX(parent_1, parent_2)
+    HAVING COUNT(*) > 1
+`).all();
+
+if (conflictingRecipes.length > 0) {
+    const pairs = conflictingRecipes
+        .map(recipe => `${recipe.first_parent} + ${recipe.second_parent}`)
+        .join(", ");
+
+    throw new Error(`Cannot enforce recipe uniqueness; conflicting parent pairs: ${pairs}`);
+}
+
+db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS monster_recipes_unordered_parents
+    ON monster_recipes (
+        MIN(parent_1, parent_2),
+        MAX(parent_1, parent_2)
     );
 `);
 
@@ -91,5 +122,13 @@ db.exec(`
         image_path TEXT NOT NULL
     );
 `);
+});
+
+try {
+    initializeDatabase();
+} catch (error) {
+    db.close();
+    throw error;
+}
 
 module.exports = db;

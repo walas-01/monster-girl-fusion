@@ -45,11 +45,13 @@ function TypeTag({ type, showText = true }) {
 
   return (
     <div
+      role={showText ? undefined : "img"}
+      aria-label={showText ? undefined : `Tipo: ${config.text}`}
       className={`${config.color}  text-white text-xs flex items-center justify-center w-fit rounded-xl p-1 ${
         showText ? "px-2 gap-1" : "rounded-full"
       }`}
     >
-      <img src={getImage(config.image_path)} alt="type" className="w-5 h-5 object-contain" />
+      <img src={getImage(config.image_path)} alt="" className="w-5 h-5 object-contain" />
       {showText && <p className="whitespace-nowrap">{config.text}</p>}
     </div>
   );

@@ -20,16 +20,6 @@ function createPlayer(playerData) {
     return { username: username, id: result.lastInsertRowid, uuid: uuid } ; // returns the id and uuid of the new player
 }
 
-// GET
-
-function getAllPlayers() {
-    return db.prepare(`
-        SELECT * FROM players
-    `).all();
-}
-
-
-
 function getPlayerByUuid(uuid) {
     return db.prepare(`
         SELECT
@@ -48,6 +38,5 @@ function getPlayerByUuid(uuid) {
 
 module.exports = {
     createPlayer,
-    getAllPlayers,
     getPlayerByUuid
 };

@@ -1,15 +1,84 @@
 const db = require("../db/database.js");
+const { badRequest, conflict, notFound } = require("../http/errors.js");
+
+function recipeKey(parent1, parent2) {
+    return JSON.stringify([parent1, parent2].sort());
+}
+
+function assertUniqueRecipePairs(recipes) {
+    const seenPairs = new Set();
+
+    for (const recipe of recipes) {
+        const key = recipeKey(recipe.parent_1, recipe.parent_2);
+
+        if (seenPairs.has(key)) {
+            throw badRequest(`Duplicate recipe for '${recipe.parent_1}' and '${recipe.parent_2}'`);
+        }
+
+        seenPairs.add(key);
+    }
+}
+
+function translateRecipeConstraint(error) {
+    if (error.code === "SQLITE_CONSTRAINT_UNIQUE") {
+        throw conflict("A recipe already exists for that parent pair");
+    }
+
+    if (error.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
+        throw badRequest("A recipe references an unknown monster");
+    }
+
+    throw error;
+}
 
 /// -------------------------------------------------------------------------------------- Monster Encyclopedia --- ///
 
 function uploadMonstersToEncyclopedia(monsters) {
     const transaction = db.transaction(() => {
+        const existingNames = new Set(
+            db.prepare("SELECT name FROM monster_encyclopedia").all().map(monster => monster.name)
+        );
+        const availableNames = new Set([
+            ...existingNames,
+            ...monsters.map(monster => monster.name)
+        ]);
+        const newMonsters = monsters.filter(monster => !existingNames.has(monster.name));
+        const recipesToInsert = newMonsters.flatMap(monster =>
+            monster.recipes.map(recipe => ({
+                ...recipe,
+                result: monster.name
+            }))
+        );
 
-        const checkMonster = db.prepare(`
-            SELECT name
-            FROM monster_encyclopedia
-            WHERE name = ?
+        assertUniqueRecipePairs(recipesToInsert);
+
+        const findConflict = db.prepare(`
+            SELECT result
+            FROM monster_recipes
+            WHERE
+                (parent_1 = ? AND parent_2 = ?)
+                OR
+                (parent_1 = ? AND parent_2 = ?)
         `);
+
+        for (const recipe of recipesToInsert) {
+            if (!availableNames.has(recipe.parent_1) || !availableNames.has(recipe.parent_2)) {
+                throw badRequest("A recipe references an unknown monster");
+            }
+
+            const existingRecipe = findConflict.get(
+                recipe.parent_1,
+                recipe.parent_2,
+                recipe.parent_2,
+                recipe.parent_1
+            );
+
+            if (existingRecipe) {
+                throw conflict(
+                    `A recipe already exists for '${recipe.parent_1}' and '${recipe.parent_2}'`
+                );
+            }
+        }
 
         const insertMonster = db.prepare(`
             INSERT INTO monster_encyclopedia
@@ -23,51 +92,30 @@ function uploadMonstersToEncyclopedia(monsters) {
             VALUES (?, ?, ?)
         `);
 
-        const added = [];
-        const skipped = [];
-
-
-        for (const monsterData of monsters) {
-            const {
-                name, display_name,recipes,image_path,type,tier,max_hp,spd,atk,aim} = monsterData;
-
-            console.log("[monsters_service]: processing monster: " + name);
-
-            // Check if monster already exists
-            const existing = checkMonster.get(name);
-
-            if (existing) {
-                console.log("[monsters_service]: monster already exists, skipping: " + name);
-                skipped.push(name);
-                continue;
-            }
+        for (const monsterData of newMonsters) {
+            const {name, display_name,image_path,type,tier,max_hp,spd,atk,aim} = monsterData;
 
             // Insert monster into encyclopedia
             insertMonster.run(name,display_name,type,tier,max_hp,atk,spd, aim,image_path);
-
-            added.push(name);
-
-            console.log("[monsters_service]: added monster: " + name);
         }
 
-        for (const monsterData of monsters) {
-            const {name,recipes} = monsterData;
-
-            // Don't add recipes for monsters that already existed
-            if (!added.includes(name)) {
-                continue;
-            }
-
-            for (const recipe of recipes) {
-                insertRecipe.run(recipe.parent_1,recipe.parent_2,name);
-            }
+        for (const recipe of recipesToInsert) {
+            insertRecipe.run(recipe.parent_1, recipe.parent_2, recipe.result);
         }
 
-
-        return {added,skipped};
+        return {
+            added: newMonsters.map(monster => monster.name),
+            skipped: monsters
+                .filter(monster => existingNames.has(monster.name))
+                .map(monster => monster.name)
+        };
     });
 
-    return transaction();
+    try {
+        return transaction();
+    } catch (error) {
+        translateRecipeConstraint(error);
+    }
 }
 
 
@@ -103,9 +151,45 @@ function updateMonsterRecipes(resultMonster, recipes) {
         `).get(resultMonster);
 
         if (!monster) {
-            throw new Error(
-                `Monster '${resultMonster}' does not exist in the encyclopedia`
+            throw notFound(`Monster '${resultMonster}' does not exist in the encyclopedia`);
+        }
+
+        assertUniqueRecipePairs(recipes);
+
+        const monsterExists = db.prepare(`
+            SELECT 1
+            FROM monster_encyclopedia
+            WHERE name = ?
+        `);
+        const findConflict = db.prepare(`
+            SELECT result
+            FROM monster_recipes
+            WHERE result <> ?
+              AND (
+                    (parent_1 = ? AND parent_2 = ?)
+                    OR
+                    (parent_1 = ? AND parent_2 = ?)
+              )
+        `);
+
+        for (const recipe of recipes) {
+            if (!monsterExists.get(recipe.parent_1) || !monsterExists.get(recipe.parent_2)) {
+                throw badRequest("A recipe references an unknown monster");
+            }
+
+            const existingRecipe = findConflict.get(
+                resultMonster,
+                recipe.parent_1,
+                recipe.parent_2,
+                recipe.parent_2,
+                recipe.parent_1
             );
+
+            if (existingRecipe) {
+                throw conflict(
+                    `A recipe already exists for '${recipe.parent_1}' and '${recipe.parent_2}'`
+                );
+            }
         }
 
         // Remove the old recipes
@@ -130,7 +214,11 @@ function updateMonsterRecipes(resultMonster, recipes) {
         }
     });
 
-    transaction();
+    try {
+        transaction();
+    } catch (error) {
+        translateRecipeConstraint(error);
+    }
 }
 
 
@@ -142,6 +230,16 @@ function updateMonsterRecipes(resultMonster, recipes) {
 //! ------------------------------------------------------------- |||||[ POST ]||||
 
 function createMonster(species, nickname, playerId) {
+    const player = db.prepare(`
+        SELECT id
+        FROM players
+        WHERE id = ?
+    `).get(playerId);
+
+    if (!player) {
+        throw notFound(`Player '${playerId}' does not exist`);
+    }
+
     const encyclopediaMonster = db.prepare(`
         SELECT max_hp, atk, spd, aim
         FROM monster_encyclopedia
@@ -150,7 +248,7 @@ function createMonster(species, nickname, playerId) {
 
     // validation
     if (!encyclopediaMonster) {
-        throw new Error(`Monster species '${species}' does not exist`);
+        throw notFound(`Monster species '${species}' does not exist`);
     }
 
     // Create the monster instance
@@ -195,6 +293,9 @@ function createMonster(species, nickname, playerId) {
 
 function fuseMonsters(parent1Id, parent2Id, playerId) { //! ------------------------- Fuse two monsters
     const transaction = db.transaction(() => {
+        if (parent1Id === parent2Id) {
+            throw badRequest("A monster cannot be fused with itself");
+        }
 
         // 1. Get both monsters making sure they belong to the player
         const getMonster = db.prepare(`
@@ -208,28 +309,29 @@ function fuseMonsters(parent1Id, parent2Id, playerId) { //! --------------------
 
         // validations
         if (!parent1) {
-            throw new Error(`Monster ${parent1Id} not found or does not belong to player`);
+            throw notFound(`Monster ${parent1Id} not found or does not belong to player`);
         }
         if (!parent2) {
-            throw new Error(`Monster ${parent2Id} not found or does not belong to player`);
-        }
-        if (parent1Id === parent2Id) {
-            throw new Error("A monster cannot be fused with itself");
+            throw notFound(`Monster ${parent2Id} not found or does not belong to player`);
         }
 
         // 2. Find a recipe using their species
-        const recipe = db.prepare(`
+        const recipes = db.prepare(`
             SELECT result
             FROM monster_recipes
             WHERE
                 (parent_1 = ? AND parent_2 = ?)
                 OR
                 (parent_1 = ? AND parent_2 = ?)
-            LIMIT 1
-        `).get(parent1.species,parent2.species,parent2.species,parent1.species);
+        `).all(parent1.species,parent2.species,parent2.species,parent1.species);
 
+        if (recipes.length > 1) {
+            throw new Error("Multiple recipes exist for the same parent pair");
+        }
 
-        if (!recipe) {return null;} // if there is no combination
+        if (recipes.length === 0) {return null;} // if there is no combination
+
+        const [recipe] = recipes;
         
         // 3. Create the resulting monster
         const resultMonster = createMonster(recipe.result, null,playerId);
@@ -242,8 +344,12 @@ function fuseMonsters(parent1Id, parent2Id, playerId) { //! --------------------
         `);
 
 
-        deleteMonster.run(parent1Id, playerId);
-        deleteMonster.run(parent2Id, playerId);
+        const firstDelete = deleteMonster.run(parent1Id, playerId);
+        const secondDelete = deleteMonster.run(parent2Id, playerId);
+
+        if (firstDelete.changes !== 1 || secondDelete.changes !== 1) {
+            throw new Error("Failed to consume fusion parents");
+        }
 
         // 5. Get the complete monster information
         const getCreatedMonster = db.prepare(`
@@ -268,6 +374,10 @@ function fuseMonsters(parent1Id, parent2Id, playerId) { //! --------------------
             WHERE monsters.id = ?
         `).get(resultMonster.id);
 
+        if (!getCreatedMonster) {
+            throw new Error("Failed to load fusion result");
+        }
+
         return getCreatedMonster;
     });
 
@@ -282,31 +392,42 @@ function fuseMonsters(parent1Id, parent2Id, playerId) { //! --------------------
 
 
 function getMonstersByPlayerUuid(uuid) { //! ----- GET all by player uuid
-    return db.prepare(`
-        SELECT
-            monsters.id,
-            monster_encyclopedia.name,
-            monster_encyclopedia.display_name,
-            monster_encyclopedia.type,
-            monster_encyclopedia.tier,
-            monsters.nickname,
-            monster_encyclopedia.max_hp,
-            monster_encyclopedia.atk,
-            monster_encyclopedia.spd,
-            monster_encyclopedia.aim,
-            monsters.owner_id,
-            monster_encyclopedia.image_path
+    const transaction = db.transaction(() => {
+        const player = db.prepare(`
+            SELECT id
+            FROM players
+            WHERE uuid = ?
+        `).get(uuid);
 
-        FROM monsters
+        if (!player) {
+            return null;
+        }
 
-        JOIN players
-            ON monsters.owner_id = players.id
+        return db.prepare(`
+            SELECT
+                monsters.id,
+                monster_encyclopedia.name,
+                monster_encyclopedia.display_name,
+                monster_encyclopedia.type,
+                monster_encyclopedia.tier,
+                monsters.nickname,
+                monster_encyclopedia.max_hp,
+                monster_encyclopedia.atk,
+                monster_encyclopedia.spd,
+                monster_encyclopedia.aim,
+                monsters.owner_id,
+                monster_encyclopedia.image_path
 
-        JOIN monster_encyclopedia
-            ON monsters.species = monster_encyclopedia.name
+            FROM monsters
 
-        WHERE players.uuid = ?
-    `).all(uuid);
+            JOIN monster_encyclopedia
+                ON monsters.species = monster_encyclopedia.name
+
+            WHERE monsters.owner_id = ?
+        `).all(player.id);
+    });
+
+    return transaction();
 }
 
 

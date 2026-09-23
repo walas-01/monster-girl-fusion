@@ -1,8 +1,9 @@
 const fs = require("fs");
+const path = require("path");
 const { uploadMonstersToEncyclopedia } = require("../services/monsters_service.js");
 
 const monsters = JSON.parse(
-    fs.readFileSync("./src/data/monsters.json", "utf8")
+    fs.readFileSync(path.resolve(__dirname, "../data/monsters.json"), "utf8")
 );
 
 console.log(`Found ${monsters.length} monsters`);
