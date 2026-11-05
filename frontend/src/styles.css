@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+:root {
+  font-family: system-ui, sans-serif;
+  color: #d9d2e5;
+  background: #100d18;
+  color-scheme: dark;
+  line-height: 1.5;
+}
+
+body { margin: 0; min-width: 280px; }
+button, select { font: inherit; }
+button { cursor: pointer; }
+button:disabled, select:disabled { cursor: wait; opacity: 0.55; }
+:focus-visible { outline: 2px solid #e3b0ff; outline-offset: 4px; }
+
+.action {
+  @apply min-h-11 rounded-lg border border-purple-300/30 bg-purple-400/15 px-5 py-2 font-medium text-purple-100 transition-colors hover:bg-purple-400/25 disabled:hover:bg-purple-400/15;
+}

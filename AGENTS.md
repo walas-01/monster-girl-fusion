@@ -8,7 +8,7 @@ Mobile-first, full-stack game where players collect monster girls, send them on 
 - Backend: Express + TypeScript; REST API under `/api`
 - Database: SQLite
 - Authentication: Google Identity Services + `express-session`
-- Deployment target: Docker containers on an Oracle Cloud VM; Caddy as reverse proxy
+- Deployment target: Docker Compose on an Oracle Cloud Linux ARM64 VM; Caddy as reverse proxy
 - Testing: JavaScript/TypeScript scripts and existing project test tools
 
 ## Project navigation
@@ -24,7 +24,7 @@ Before making changes, inspect the relevant directories and existing patterns. D
 ## Project documents
 
 - `AGENTS.md`: instructions for agents and development workflow (this file)
-- `project.md`: architecture and important technical decisions (to be written)
+- `project.md`: architecture and important technical decisions
 - `specs/<number>-<slug>/spec.md`: feature requirements and acceptance criteria
 - `specs/<number>-<slug>/plan.md`: implementation design and small, ordered task batches
 - `specs/<number>-<slug>/references/`: images to use a reference for UI, not all specs have them
@@ -121,24 +121,15 @@ When a user explicitly asks only for discussion, documentation, or planning, do 
 Treat `MEMORY.md` as a short working handoff, **not** as the source of truth. The code, approved specifications, and documented decisions take precedence. Update it at the end of meaningful work, keep it current, and remove stale notes rather than letting it become a running diary.
 
 ## Deployment readiness
-The intended production environment is an Oracle Cloud Linux VM running Docker Compose.
 
-### The application must be designed for this environment from the beginning, even when developing locally without Docker.
+Design new code for the deployment architecture in `project.md`, even when developing locally without Docker. Keep technical deployment decisions there rather than duplicating them here.
 
-Requirements
-
-- The frontend is built with Vite into static files suitable for serving through Caddy.
-- The Express backend must run independently of the Vite development server.
-- The backend exposes REST endpoints under /api.
-- Frontend API requests should use relative /api URLs, avoiding hardcoded localhost or production addresses.
-- Application configuration must use environment variables where appropriate.
-- Secrets must never be hardcoded or committed to Git.
-- SQLite database and persistent session storage paths must be configurable.
-- Runtime data must not depend on files inside a container's writable layer.
-- The backend must support graceful shutdown.
-- Backend startup and database migrations must be reproducible.
-- The application should support a lightweight health-check endpoint.
-- Do not introduce infrastructure dependencies without clear justification.
+- Configure deployment-specific ports, secrets, storage paths, and proxy settings through environment variables; never rely on machine-specific paths or shell behavior.
+- Keep essential state restart-safe and independent of application source/build files. Do not use in-memory sessions or volatile storage for authoritative player state.
+- Preserve relative frontend `/api` requests and independent backend operation in development and production.
+- Keep the backend compatible with HTTPS behind a narrowly trusted reverse proxy; do not blindly trust forwarded headers.
+- Check new dependencies and build steps for Linux ARM64 support, especially native SQLite/session modules. Report unverified compatibility or required native build tooling before adoption.
+- Preserve bounded graceful shutdown, reproducible startup/migrations, and a lightweight health check as features are added.
 
 ### During feature planning
 
@@ -148,13 +139,15 @@ For each feature, evaluate whether it introduces:
 - Persistent files or storage requirements.
 - New ports, services, or infrastructure dependencies.
 - Build or startup requirements.
+- Linux ARM64 compatibility and native build requirements.
+- Reverse-proxy trust, HTTPS/cookie behavior, or development proxy integration.
 - Changes affecting Docker or production deployment.
 
-### Document relevant impacts in the feature's plan.md.
+Document relevant impacts and verification limitations in the feature's `plan.md`. Report existing incompatibilities before changing application code.
 
 Constraints
 
 - Do not create or modify production infrastructure without explicit approval.
-- Do not introduce Docker, Caddy, or Oracle-specific implementation prematurely.
+- Do not add Dockerfiles, Compose files, Caddy configuration, or cloud resources until explicitly approved.
 - Prefer simple solutions that work both locally and in the intended deployment environment.
 - Document detailed infrastructure decisions in project.md.

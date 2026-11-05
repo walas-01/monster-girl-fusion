@@ -11,7 +11,7 @@ The project is a learning and portfolio project. The priority is a clear, workin
 ### Core loop
 
 1. The player signs in with Google.
-2. A first-time player chooses a unique username and receives one instance of every starting species.
+2. A first-time player chooses a unique permanent username. Starter acquisition is a separate future step: eligible accounts will receive one instance of every starting species exactly once, independently of whether they already have a username.
 3. The player sends a party of up to three available monsters on an expedition.
 4. The server simulates the complete expedition and awards resources and eggs based on difficulty, progress, and party composition.
 5. Dispatched monsters become tired and cannot join another expedition until their recovery time has elapsed.
@@ -59,7 +59,7 @@ Type names, the six-type weakness cycle, resource mappings, and the initial aspe
 
 ### Acquisition and fusion
 
-Starting species are lower-tier monsters that do not require fusion. A first-time account receives one of every starting species.
+Starting species are lower-tier monsters that do not require fusion. Eligible accounts will receive one of every starting species exactly once. The starter feature must define durable grant tracking for both new accounts and existing accounts that already completed username setup; a username is not proof of a prior grant. No starter grants are implemented yet.
 
 Fusion uses two different owned monsters. The input order is irrelevant, so A + B is the same recipe as B + A. Two monsters of the same species cannot be fused.
 
@@ -164,7 +164,13 @@ The frontend is a React, Vite, TypeScript, and Tailwind CSS application. It is r
 
 The frontend must not calculate authoritative combat, rewards, timers, fusion results, upgrade costs, or capacity rules. API requests use relative `/api` URLs without environment-specific hostnames.
 
+Local development will use Vite's development proxy to forward `/api` to the independently running backend, preserving the same browser-facing paths as production. The development proxy target is configurable through environment-based Vite configuration, not embedded in React code. Production does not depend on Vite's development server or proxy.
+
 Vite builds static production assets suitable for serving through Caddy. Catalog image references should be stable relative paths or asset keys rather than database blobs or machine-specific filesystem paths.
+
+The implemented `frontend/` is an independent npm package targeting Node 24.19+ within Node 24: React 19.3.1, Vite 8.3.6, TypeScript 6.0.3, and Tailwind 4.3.4. Features 004/005 supply one minimal authentication/username-setup view; game screens and starter grants are not implemented. Generated demo components/assets/styles and unused lint tooling were removed. Runtime packages are limited to React/React DOM; the official Google Identity Services SDK loads directly in the browser without a wrapper dependency.
+
+Client calls use relative `/api` URLs. Development proxy settings are server-only `DEV_API_TARGET`/`DEV_PORT` (defaults localhost:3000/5173), with strict-port failure and unchanged request Origin/path/cookies. `VITE_GOOGLE_CLIENT_ID` is the sole intended public app configuration and must match the backend client ID. Secrets never enter browser configuration. Production output is static and does not depend on Vite's proxy/server. Setup, exact dependencies, tests, native build-tool compatibility, and remaining live-Google/platform checks are in `frontend/README.md`.
 
 ### Backend
 
@@ -184,6 +190,8 @@ Routes should remain thin. Game rules should be organized separately from HTTP h
 
 The API should use a consistent JSON error shape and appropriate HTTP status codes. Exact endpoint contracts belong in feature specifications and plans, where affected consumers can be reviewed before implementation.
 
+The implemented foundation lives in `backend/` as a standalone npm package targeting Node 24 LTS and Express 5. Strict TypeScript uses native ESM/NodeNext, compiles application source to `dist/`, and keeps the application factory separate from listener/configuration/lifecycle code. Development uses `tsx` with Node watch mode; tests use Node's built-in runner and assertions. Production runs compiled JavaScript without development loaders. The exact locked versions, commands, HTTP error envelope, configuration, and verification limits are documented in `backend/README.md` and `specs/001-backend-foundation/`.
+
 ### Persistence
 
 SQLite is the MVP database. The conceptual data model includes:
@@ -200,11 +208,23 @@ SQLite is the MVP database. The conceptual data model includes:
 
 There is no expedition-history table in the MVP. Static game catalogs must be reproducibly seeded or migrated. Exact schemas, indexes, constraints, and migration tooling require explicit review and approval in the relevant feature plan before implementation.
 
-Game data and session data should use configurable database paths. Separate SQLite files for game data and session storage are preferred to isolate session churn, while both remain on persistent storage. The initial production deployment uses one backend process because SQLite is not intended for horizontally scaled concurrent writers.
+The implemented persistence foundation uses one synchronous `better-sqlite3` 12.11.1 application connection with foreign keys enabled, WAL journaling, FULL synchronization, and a 1,000 ms lock-wait timeout. The driver version was explicitly approved after v13.0.3 failed clean Windows installation without native build tools. Native transactions and parameter binding are reused directly; callbacks must be synchronous and short. No ORM or repository framework is introduced.
+
+`DATABASE_PATH` selects the file. Development/test defaults to `backend/data/game.sqlite` with relative paths resolved against the backend package directory, independent of source/compiled execution and the shell working directory. Production requires an explicit absolute path in an existing writable directory; there is no fallback database. Storage cannot be inside `src/` or `dist/`.
+
+Application schema contains `schema_migrations`, `users`, and `sessions`, with an expiration index on sessions. Approved migration 1 (`create_authentication_tables`) creates the two authentication tables/index atomically through the existing catalog. Explicitly imported TypeScript migrations compile with the application and run before HTTP startup; recorded versions/names/SQL hashes must match a catalog prefix. Initialization/listen failures release resources, and shutdown disposes the session timer after HTTP draining before closing the shared connection once. Exact schemas and operational details are in feature plans 002/003 and `backend/README.md`.
+
+Approved migration 2 (`create_case_insensitive_username_index`) adds a partial unique index on non-NULL `users.username COLLATE NOCASE`, retaining migration 1/original UNIQUE constraint and preserving user/session data. Existing ASCII-case collisions stop migration/startup safely, with no silent renames/merges. Legacy out-of-policy names are preserved; new API assignments enforce ASCII rules. The exact index, data policy, and private diagnostic query are documented in feature 005 and `backend/README.md`.
+
+The portfolio MVP uses **one SQLite database and one shared connection** for users, future game data, sessions, and migration history. `DATABASE_PATH` is the only database-path setting; do not add a separate session database, connection, migration catalog, or mount. The existing migration runner owns all table creation. The implemented session adapter borrows the application connection and owns only its operations/cleanup timer; startup/lifecycle closes the database once after request draining and adapter disposal, attempting close even if disposal fails.
+
+This choice favors simple development, configuration, and backup/restore over isolating session-write churn. Keep session cleanup limited to expired session rows and transactions short. Separate storage is a future option only if measured load warrants it, not an MVP requirement. Persistent storage must cover the shared database's containing directory and journal/WAL sidecars, not just its main file. Rebuilding or replacing application code must not recreate or erase player/session data. Backups contain session data and must remain private. The initial production deployment uses one backend process because SQLite is not intended for horizontally scaled concurrent writers.
+
+Sessions and authoritative player state must survive process restarts; Express's in-memory session store and other process-local essential state are not acceptable. Transient combat simulation state and disposable caches may remain in memory where their loss does not lose committed state or change an already committed outcome. This does not add expedition-history persistence to the MVP.
 
 ## Authentication
 
-Authentication is Google-only and uses Google Identity Services in React, `google-auth-library` in Express, `express-session`, and `connect-sqlite3`. Better Auth is not used.
+Authentication is Google-only: the backend uses `google-auth-library` 11.3.3 and `express-session` 1.19.0 with a small local `SQLiteSessionStore` borrowing the existing `better-sqlite3` connection. The user approved this replacement for `connect-sqlite3` after its lifecycle/error behavior was reviewed. The adapter implements get/set/destroy/touch, guarded callbacks/serialization, absolute expiration, and a cancellable 15-minute expired-row cleanup timer; it never opens/closes a database. Better Auth is not used. The backend API and minimal React/Google Identity Services UI are implemented; live Google account/popup integration remains unverified.
 
 1. React obtains a Google ID token.
 2. React sends the token to the Express authentication endpoint.
@@ -213,11 +233,19 @@ Authentication is Google-only and uses Google Identity Services in React, `googl
 5. Subsequent logins reuse the user identified by the stable Google subject identifier.
 6. After authentication and onboarding, protected routes authorize through `req.session.userId`.
 
-The user record contains an internal ID, unique Google ID, email, unique username, and creation timestamp. The username is chosen during first login and is not editable in the MVP. Initial monsters must be granted exactly once as part of safe onboarding.
+The user record contains a UUID, unique Google subject, verified profile email (not a unique identity/linking key), nullable unique username, and creation timestamp. New authenticated accounts have no username and require username setup. Google authentication updates verified email for the same subject but never assigns a username or grants resources/monsters. Feature 005 implements permanent username-only setup, deliberately separate from future starter grants. Neither a non-null username nor `requiresOnboarding: false` proves any monster/resource grant. Future grants need independent approved durable eligibility/exactly-once tracking and must cover existing named accounts.
 
-Sessions use persistent SQLite storage and secure HttpOnly cookies. Login regenerates the session to prevent fixation. Production cookies require HTTPS and suitable `Secure` and `SameSite` settings. The application supports persistent login, explicit expiration, and logout. State-changing routes require CSRF protection; the concrete origin-check or token strategy will be selected during authentication planning.
+`POST /api/auth/username` accepts only a username, authorizes the session's internal account, and uses existing Origin/CSRF/HTTPS/body/error conventions. It trims surrounding whitespace and requires 3–20 ASCII letters/digits/underscores including one alphanumeric. A short immediate SQLite transaction re-reads the account and conditionally assigns only when NULL; the persistent NOCASE index handles cross-account collisions. Saved capitalization is preserved. Same-name resubmission confirms existing spelling; a different name cannot overwrite it. No extra dependencies or session-expiry changes. Existing `requireOnboarded` checks username completion only and must not stand in for future game-access/starter rules.
+
+Sessions use persistent SQLite rows and the signed opaque `mgf.sid` cookie (host-only, path `/api`, HttpOnly, SameSite=Lax; always Secure in production). Login verifies Google signature/audience/issuer/expiry plus subject and verified-email claims, regenerates the SID and CSRF token, and awaits persistent save. Sessions default to seven-day absolute expiration configured by `SESSION_TTL_SECONDS`; reads do not extend the deadline. Anonymous CSRF sessions expire after 15 minutes. Logout deletes the stored session and clears the cookie.
+
+`/api/auth/csrf`, `/api/auth/google`, `/api/auth/session`, and `/api/auth/logout` provide bootstrap/login/inspection/logout with no-store responses. State-changing auth requests require both an exact configured `APP_ORIGIN` and a server-side synchronizer token in `X-CSRF-Token`, including login CSRF protection. Google credentials and unnecessary profile data never enter sessions or logs. `requireAuthenticated` and `requireOnboarded` helpers perform current-user checks for future routes; no protected game endpoint is implemented. Health stays public and bypasses session/database access.
+
+`GOOGLE_CLIENT_ID` and a stable randomly generated 64-hex-character `SESSION_SECRET` are required at service startup, including local development. Google client secrets/service accounts are not needed. Outbound certificate fetching has a five-second aborting timeout with retries disabled; verification transport failures fail closed. Accounts and session saving use separate short operations, not a SQL transaction across asynchronous verification/callbacks; retries reuse any already-created account.
 
 Authentication code must remain separate from game logic. The application stores no passwords and performs no email verification of its own.
+
+The frontend restores session state before showing sign-in controls and treats failed inspection as unknown, not anonymous. Its official Google button uses popup/callback sign-in without One Tap or automatic selection. Each deliberate login/logout gets a fresh CSRF token. Duplicate submissions and obsolete callbacks are guarded, and ambiguous mutation failures trigger a read-only session reconciliation rather than automatic mutation replay. Credentials/tokens are never persisted in browser storage or URLs. A small per-view controller handles async sequencing and cancellation; no global-state framework was added. Headless Chrome exercised this flow through real Vite/backend services with a temporary database and controlled Google test dependencies, not live Google sign-in.
 
 ## Localization
 
@@ -225,30 +253,35 @@ All player-facing text supports English and Spanish. Code, identifiers, logs, da
 
 The frontend selects its initial language from browser preferences, defaults to English for unsupported languages, and allows manual switching. React components must use translation keys rather than hardcoded player-facing strings. Catalog records should expose stable identifiers so names and descriptions can be translated without embedding one language into game rules.
 
-The persistence behavior for a player's manual language choice will be decided with the localization feature. It may begin as browser-local state unless cross-device persistence is required.
+Feature 004 implements a typed English/Spanish dictionary (`frontend/src/i18n.ts`) and React-local language state without an i18n dependency. It chooses the first supported browser preference (including regional tags), otherwise English; manual switching updates labels/document language/title without losing auth state. Manual choice is intentionally memory-only and resets on reload for this feature. Persisting it in localStorage or across devices remains a future decision. Google's own dialogs may follow Google/browser language preferences.
 
 ## Deployment and Operations
 
-The production target is an Oracle Cloud Linux VM running Docker containers with Caddy as the public reverse proxy.
+The production target is an Oracle Cloud Linux ARM64 VM running containers managed by Docker Compose, with Caddy as the public reverse proxy. This is an application compatibility target, not authorization to create infrastructure.
 
 The intended shape is:
 
 - Caddy serves the built frontend static files.
-- Caddy proxies `/api` requests to the Express backend.
+- Caddy terminates public HTTPS and proxies `/api` requests to the Express backend without stripping the `/api` prefix. The backend can serve internal HTTP without managing public TLS certificates.
 - The backend runs independently from the Vite development server.
-- SQLite game and session files live on persistent mounted storage, not a container's writable layer.
+- The shared SQLite database directory, including sidecar files, lives on persistent mounted storage, not a container's writable layer. One persistent database mount is sufficient; session storage adds no mount or service.
 
-Environment variables provide deployment-specific configuration, including Google client IDs, session secrets, cookie settings, database paths, port, and runtime environment. Secrets must never be committed or exposed through Vite except for values explicitly safe for browser use.
+Environment variables provide deployment-specific configuration, including Google client IDs, session secrets, cookie settings, the sole `DATABASE_PATH`, port, and runtime environment. Secrets must never be committed or exposed through Vite except for values explicitly safe for browser use.
+
+Express reverse-proxy trust is disabled by default and configured only through explicit IP/CIDR entries in `TRUST_PROXY_CIDRS`; unconditional trust, hop counts, aliases, and `/0` are rejected. Production auth endpoints require secure protocol detection, supporting HTTPS termination at a narrowly trusted proxy without weakening production cookies for local HTTP development. The trusted proxy must replace untrusted forwarded headers, and backend exposure must not bypass that boundary. `APP_ORIGIN` is configured independently of Host/forwarded headers. No Caddy/network configuration has been added or tested; runtime safeguards do not constitute deployment infrastructure.
+
+Runtime dependencies and build tooling must support Linux ARM64 and the chosen Node version. Do not assume Windows-installed dependencies or native binaries can be copied into production. Compatibility evidence is recorded in `backend/README.md`: Node 24 SQLite prebuilds exist for Linux ARM64, but actual target execution remains unverified. Auth packages add no native runtime driver; the session adapter reuses the installed one. Clean Windows and isolated production-only auth installs are verified with local signing keys/controlled certificates. Actual Google/browser integration, Caddy TLS, and POSIX signal delivery remain unverified. Deprecated prebuild-install/node-domexception and install-script policy warnings are recorded maintenance caveats; no script bypass was added.
 
 Backend requirements include:
 
 - Reproducible startup and database migrations
 - A lightweight health-check endpoint
-- Graceful shutdown on container termination
+- Bounded graceful shutdown on `SIGTERM` and `SIGINT`, stopping new requests and draining active work before closing database/session resources when those exist
 - No hardcoded local or production URLs
+- No machine-specific filesystem paths or platform-specific startup assumptions
 - Recovery-safe database transactions
 
-Docker, Caddy, and Oracle-specific files will be introduced only through an explicitly approved infrastructure plan. Application code should remain deployable in this target environment from the beginning.
+Dockerfiles, Compose files, Caddy configuration, and Oracle Cloud resources will be introduced only through an explicitly approved infrastructure plan. Application code should remain deployable in this target environment from the beginning.
 
 ## Testing Strategy
 
@@ -271,14 +304,13 @@ The following decisions are intentionally deferred rather than assumed:
 - Aspect name, initial abilities, and detailed status rules
 - Starting-monster stat generation
 - Stat-roll distribution and rounding
-- AIM interpolation and bounds
-- Target-weight normalization after knockouts
-- Same-side SPD tie ordering
-- Encounter round limit and stalemate outcome
-- Enemy progression and encounter composition formulas
+- AIM interpolation and bounds (to be done in combat feature)
+- Target-weight normalization after knockouts (to be done in combat feature)
+- Same-side SPD tie ordering (to be done in combat feature)
+- Encounter round limit and stalemate outcome  (to be done in combat feature)
+- Enemy progression and encounter composition formulas  (to be done in combat feature)
 - Resource and egg reward formulas
 - Egg hatch durations and discard compensation
 - Upgrade costs, effects, and maximum levels
 - Safe retry behavior for an expedition response lost after commit
-- CSRF implementation details
-- Persistence of the player's language preference
+- Persistence of the player's language preference (probably localStorage)
