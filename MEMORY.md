@@ -4,15 +4,17 @@ Keep this file brief and factual. Update it after meaningful work; replace outda
 
 ## Last change or work done
 
-- No implementation work recorded yet.
+- Drafted `project.md` with the agreed MVP game loop, combat model, application architecture, authentication, localization, persistence, testing, and deployment constraints.
+- No application code or database schema has been implemented.
 
 ## Unfinished work
 
-- Define `project.md` architecture documentation.
+- Review and approve `project.md`, especially its explicit open decisions.
+- Resolve expedition retry behavior before implementing the transactional expedition endpoint.
 
 ## Possible next step
 
-- Draft the first feature specification in `specs/001-<feature-name>/spec.md`.
+- After approving `project.md`, draft the first feature specification in `specs/001-<feature-name>/spec.md`.
 
 ## Recommendations
 
