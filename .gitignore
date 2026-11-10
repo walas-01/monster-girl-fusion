@@ -11,6 +11,9 @@
 /frontend/.env.*
 !/frontend/.env.example
 /frontend/*.tsbuildinfo
+*.catalog.snapshot.json
+*.catalog.pending.json
+*.catalog.snapshot.json.publish-*.tmp
 *.sqlite
 *.sqlite3
 *.db
