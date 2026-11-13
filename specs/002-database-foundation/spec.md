@@ -1,6 +1,6 @@
 # 002 — Base de datos y esquema inicial
 
-**Estado:** borrador pendiente de aprobación. No autoriza instalar un driver, crear una base real ni ejecutar cambios de esquema. Después de aprobar esta spec, el plan deberá mostrar el SQL exacto y las decisiones pendientes antes de implementar.
+**Estado:** los cuatro lotes están completos (2026-11-12). Con aprobación explícita se adoptó npm 12.2.2 y `allowScripts: { "better-sqlite3": false }`, sin actualizar npm globalmente ni cambiar versiones de dependencias. Instalación limpia, tipos, compilación y suite: **170 correctas, dos omitidas en Windows por señales POSIX, cero fallos** (172 total). Runtime compilado aislado, reinicios/persistencia y `.env`/watch verificados; documentación de operación/respaldo completa. Migración 2 añade nombres bilingües sin editar la 1. Solo bases desechables; `.env` real y datos del jugador intactos. Linux ARM64, señales POSIX reales y cortes de energía siguen sin verificar.
 
 ## Objetivo
 
@@ -50,6 +50,8 @@ No añadir tablas de pools, recursos separados, expediciones, instancias enemiga
 6. El health check conserva su contrato y no consulta SQL ni abre conexiones adicionales por petición. No se añaden endpoints públicos de diagnóstico de base de datos.
 7. Los archivos SQLite y sus archivos auxiliares permanecen fuera de Git. El respaldo debe ser coherente con el modo de journaling: copiar únicamente el archivo principal de una base activa no se considera una copia válida por defecto.
 
+Por simplificación explícitamente aprobada, DATABASE_PATH es configuración de confianza: solo se comprueban rutas normalizadas, sin resolver enlaces simbólicos/junctions ni verificar previamente que el destino sea un archivo regular. Los errores habituales de apertura se delegan al driver. Un enlace puede eludir la protección léxica de directorios; mantener la ubicación real fuera del código es responsabilidad de quien configura el servidor. No se retiran ajustes/verificaciones SQLite ni limpieza de conexiones.
+
 ## Migraciones: comportamiento esperado
 
 1. Mantener una secuencia explícita y versionada de cambios. El ejecutor prepara `schema_migrations`; la primera migración crea las ocho tablas de dominio y sus índices. El resultado son nueve tablas de aplicación, contando el historial.
@@ -64,7 +66,9 @@ No añadir tablas de pools, recursos separados, expediciones, instancias enemiga
 
 - Respetar columnas y relaciones de `database.md`, con nombres en inglés y el plural `monster_recipes`.
 - Claves foráneas de juego con borrado/actualización restringidos; no añadir cascadas silenciosas.
-- Username único sin distinguir mayúsculas para los nombres ASCII previstos; los controles HTTP y la política de nombre permanente corresponden a autenticación.
+- Username obligatorio y único sin distinguir mayúsculas para los nombres ASCII previstos; se debe elegir antes de insertar el usuario. Los controles HTTP y la política de nombre permanente corresponden a autenticación.
+- Todos los campos de usuario son obligatorios. En progreso solo `starters_granted_at` admite NULL; niveles no negativos y dificultad obligatoria entre 1 y 4. En ambos catálogos el tipo es obligatorio y puede ser `normal`; el aspecto admite NULL. El cansancio usa únicamente `tired_until`, sin columna de estado.
+- Seguimiento aprobado: `monster_species` y `enemy_species` guardan `name_en` y `name_es` obligatorios y no vacíos; los nombres no son únicos ni se duplican en instancias poseídas. La migración 2 no inventa traducciones: si una tabla de especies de versión 1 ya tiene filas, rechaza la actualización y revierte todos sus cambios hasta acordar una migración de datos con nombres reales.
 - Estadísticas, balances, niveles y timestamps enteros dentro de los límites seguros acordados; máximo HP positivo, cantidades no negativas y `ready_at >= created_at`.
 - Parejas de receta ordenadas y distintas, con clave primaria compuesta. No duplicar relaciones mediante columnas o tablas auxiliares innecesarias.
 - Mantener los resultados de huevos como regla derivada de tier y ausencia de receta productora. No almacenar pools ni implementar todavía la eclosión/validación de catálogos.
@@ -82,23 +86,27 @@ No añadir tablas de pools, recursos separados, expediciones, instancias enemiga
 
 ## Criterios de aceptación
 
-- [ ] El plan documenta y recibe aprobación para el driver/versionado, SQL, restricciones, índices y configuración de archivo/integridad.
-- [ ] El backend crea las nueve tablas previstas en una base nueva, antes de aceptar peticiones HTTP, sin insertar contenido de juego o cuentas.
-- [ ] Un segundo arranque no repite migraciones y conserva registros de prueba tras cerrar/reabrir una base temporal.
-- [ ] Las restricciones rechazan referencias inexistentes, duplicados y cantidades/timestamps inválidos según el SQL aprobado.
-- [ ] Una migración que falla revierte sus cambios y no registra éxito; el historial incompatible o modificado provoca un fallo seguro.
-- [ ] Los errores de archivo/configuración/arranque no dejan conexiones ni listeners HTTP abiertos.
-- [ ] La conexión se cierra después del servidor HTTP, incluido el manejo de errores y cierre forzado, sin doble cierre ni temporizadores abandonados.
-- [ ] Pruebas y ejecución compilada usan el mismo mecanismo de esquema/migraciones. Todas las pruebas emplean bases desechables, nunca almacenamiento del jugador.
-- [ ] Se conservan el contrato de health, los errores existentes y las verificaciones de la función 001, adaptadas al nuevo arranque persistente cuando corresponda.
-- [ ] La documentación cubre DATABASE_PATH, archivos persistentes/auxiliares, migraciones, respaldo, comandos y límites de verificación en Windows/Linux ARM64.
-- [ ] No se implementan funciones ni infraestructura excluidas.
+- [x] El plan documenta y recibe aprobación para el driver/versionado, SQL, restricciones, índices y configuración de archivo/integridad.
+- [x] El backend crea las nueve tablas previstas en una base nueva, antes de aceptar peticiones HTTP, sin insertar contenido de juego o cuentas (paso 1 del lote 3, pruebas directas temporales).
+- [x] Un segundo arranque no repite migraciones y conserva registros de prueba tras cerrar/reabrir una base temporal.
+- [x] Las restricciones rechazan referencias inexistentes, duplicados y cantidades/timestamps inválidos según el SQL aprobado.
+- [x] Una migración que falla revierte sus cambios y no registra éxito; el historial incompatible o modificado provoca un fallo seguro.
+- [x] Los errores de archivo/configuración/arranque no dejan conexiones ni listeners HTTP abiertos (rutas de fallo verificadas; no garantiza recuperación de cualquier fallo nativo del driver).
+- [x] La conexión se cierra después del servidor HTTP, incluido el manejo de errores y cierre forzado, sin doble cierre ni temporizadores abandonados (pruebas directas y cierre por código; señales POSIX reales pendientes).
+- [x] Pruebas y ejecución compilada usan el mismo mecanismo de esquema/migraciones. Todas las pruebas emplean bases desechables, nunca almacenamiento del jugador.
+- [x] Se conservan el contrato de health, los errores existentes y las verificaciones de la función 001, adaptadas al nuevo arranque persistente cuando corresponda.
+- [x] La documentación cubre DATABASE_PATH, archivos persistentes/auxiliares, migraciones, respaldo, comandos y límites de verificación en Windows/Linux ARM64.
+- [x] No se implementan funciones ni infraestructura excluidas.
 
-## Decisiones pendientes antes de implementar
+## Decisiones aprobadas y trabajo pendiente
 
-- **Driver:** comparar `node:sqlite` integrado con `better-sqlite3`. El primero evita una dependencia pero su documentación Node 24 lo clasifica como release candidate; el segundo ofrece una API madura pero añade un módulo nativo cuya instalación hay que verificar en Windows y para el destino ARM64. No instalar ni elegir silenciosamente uno.
-- **SQL:** presentar la definición exacta de las nueve tablas, índices y defaults técnicos. La aprobación del diseño conceptual no reemplaza esta revisión.
-- **Dificultades:** acordar su codificación numérica y restricciones compartidas por `enemy_species` y `player_progress`; no confundirla con valores iniciales del jugador.
-- **Migraciones/operación:** aprobar representación, transacciones, resolución de rutas, configuración SQLite y cierre en el plan. No crear un CLI adicional de migraciones si el arranque automático cubre la necesidad actual.
+- **Driver/rutas/configuración:** aprobados e implementados en el lote 1; ARM64 continúa sin verificar.
+- **SQL:** nueve tablas STRICT, siete índices explícitos y restricciones aprobados e implementados en el lote 2. No hay contenido de juego ni valores iniciales de jugador.
+- **Dificultades:** 1 = Easy, 2 = Normal, 3 = Hard, 4 = Very Hard; no fija la dificultad inicial desbloqueada.
+- **Migraciones:** SQL en TypeScript, SHA-256 normalizado a LF, transacción inmediata para historial y todas las versiones pendientes; rechazo de historial incompatible y esquemas desconocidos. Implementado y probado con almacenamiento temporal, incluida paridad fuente/compilado.
+- **Arranque/cierre:** paso 1 del lote 3 autorizado e implementado. El ejecutor recibe una conexión del llamador y no la cierra; `startServer` es ahora su propietario y la cierra ante fallo de migraciones/bind y después del cierre HTTP. Timeout fuerza HTTP antes de cerrar SQLite; los errores de cierre rechazan la promesa y no dejan handlers/timer propios registrados. Las pruebas de fallo de cierre inyectan un error después de liberar el handle real; no garantizan recuperación de un driver cuyo cierre nativo falle.
+- **Aislamiento:** paso 2 del lote 3 autorizado e implementado; cada proceso hijo recibe su ruta temporal, incluida producción y los casos de PORT inválido. Se reutiliza la limpieza existente para esperar/detener el proceso antes de borrar su directorio. Las pruebas HTTP puras y de PORT no abren SQLite; los hijos de señales siguen siendo HTTP-only, omitidos en Windows.
+- **Regresión:** paso 3 del lote 3 autorizado y completo: diez casos nuevos de reinicio/persistencia y fallo antes de bind para fuente/compilado; suite completa correcta, sin corregir código de aplicación. Se conservan las pruebas anteriores y las omisiones explícitas de señales en Windows.
+- **Lote 4 completo:** tras la pausa se aprobó npm 12.2.2 con denegación explícita de scripts del driver. El lock solo sincroniza el requisito npm, sin `gypfile` manual ni cambios de dependencias. Instalación completa (81 paquetes), instalación runtime (67), SQLite 3.54.1, reinicios con datos persistidos, shutdown por código, paridad de rutas y `.env`/watch correctos; ambas instalaciones sin vulnerabilidades reportadas ni advertencias de compilación nativa/EPERM. Todos los procesos y archivos temporales se limpiaron; fingerprints del código/config/lock/`.env` real se conservaron durante las pruebas. Respaldo/restauración offline y límites documentados en README. Sin cambios de infraestructura ni datos del jugador.
 
-Siguiente paso: aprobar o ajustar esta especificación y preparar después el plan con SQL revisable y lotes pequeños. Ninguna base real se crea al redactar este documento.
+La integración, persistencia y runtime aislado están verificados en Windows x64/Node 24.19.0/npm 12.2.2. Señales POSIX reales, Linux ARM64, cortes de energía y restauración de datos reales no están certificados. El cierre normal por código en Windows no certifica señales POSIX. Prevalece la suite limpia actual de 170 correctas/dos omitidas sobre resultados parciales históricos.

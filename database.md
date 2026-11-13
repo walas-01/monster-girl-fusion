@@ -2,9 +2,9 @@
 
 ## Status and scope
 
-This document describes the agreed database design for the project reboot. The minimal HTTP backend (feature 001) is implemented and `frontend/` remains empty, but these tables are **planned, not implemented or verified in a local database**. The proposed persistence scope is in `specs/002-database-foundation/spec.md`, pending approval.
+This document describes the agreed database design for the project reboot. All four feature-002 batches are complete: connection module, nine-table schema/two migrations, owned startup/shutdown and isolated regression. On Windows x64/Node 24.19.0/npm 12.2.2, clean installation/typecheck/build/full suite passed (170 passed, two POSIX skips), as did compiled runtime-only startup/restart/persistence and development `.env`/watch checks. The explicitly approved npm 12 driver-script deny replaces the original installation blocker without changing dependency versions or manually patching lock metadata. Only disposable databases were used; no developer/player storage was initialized. Operating/migration/offline backup/recovery instructions are in [`backend/README.md`](backend/README.md). Linux ARM64, real POSIX shutdown, power-loss behavior and real-data restore drills remain unverified. Frontend files appeared independently and were not modified/reviewed for this batch.
 
-The design favors a small number of explicit tables. Exact SQL, initial values, balance rules, migrations, and existing-player handling still need review before implementation. Historical implementation details in `project.md` and `MEMORY.md` are not evidence of executable code in this checkout.
+The design favors a small number of explicit tables. Exact SQL and transactional migrations are approved and implemented; initial values, balance rules, onboarding, and existing-player handling remain future work. Historical implementation details in `project.md` and `MEMORY.md` are not evidence of executable code in this checkout.
 
 ## 1. General rules
 
@@ -20,7 +20,7 @@ The design favors a small number of explicit tables. Exact SQL, initial values, 
 
 ## 2. Table overview
 
-Nine tables are planned:
+Nine tables are defined by the migration runner:
 
 | Table | Responsibility |
 | --- | --- |
@@ -47,13 +47,13 @@ One row per Google-linked player. Three fixed resource balances do not require a
 | `id` | TEXT, primary key | Internal player UUID. |
 | `google_id` | TEXT, unique, required | Stable Google subject used to identify the account. |
 | `email` | TEXT, required | Verified profile email; not an account-linking key. |
-| `username` | TEXT, nullable | Permanent display name; NULL before username setup. |
+| `username` | TEXT, unique, required | Permanent display name; must be chosen before the account row is created. |
 | `crystals` | INTEGER, required | Nonnegative safe integer balance. |
 | `mushrooms` | INTEGER, required | Nonnegative safe integer balance. |
 | `souls` | INTEGER, required | Nonnegative safe integer balance. |
 | `created_at` | INTEGER, required | Account-creation timestamp. |
 
-Usernames are case-insensitively unique. Application validation trims surrounding whitespace and accepts 3–20 ASCII letters, digits, and underscores, including at least one letter or digit. Once assigned, a username cannot be changed through the normal application.
+Usernames are case-insensitively unique. The future account flow must collect the username before inserting the user row; this schema change does not implement that flow. Application validation must trim surrounding whitespace and accept 3–20 ASCII letters, digits, and underscores, including at least one letter or digit. Once assigned, a username cannot be changed through the normal application. All `users` columns are required; resource balances must be at least zero.
 
 Starting resource balances remain undecided. Awards and purchases must prevent overflow and negative balances. Do not duplicate balances in progression, sessions, or browser storage.
 
@@ -71,6 +71,8 @@ One row per initialized player. Separating this small group keeps account data d
 | `starters_granted_at` | INTEGER, nullable | Timestamp of completed starter distribution; NULL before the grant. |
 
 `user_id` is sufficient as the primary key: no separate progression ID or duplicate owner index is needed.
+
+Only `starters_granted_at` is nullable in progression: NULL means delivery has not happened. Purchased levels are required nonnegative integers. Difficulty is required, encoded as 1 = Easy, 2 = Normal, 3 = Hard, 4 = Very Hard; this does not pick its initial unlocked value.
 
 Store purchased levels, not calculated capacities or timing multipliers. Costs, maximum levels, unlock requirements, and level effects belong in backend game definitions. Their exact values and initial progression remain undecided.
 
@@ -99,6 +101,8 @@ One row per shared species definition, not per owned monster.
 | Column | Proposed storage | Meaning |
 | --- | --- | --- |
 | `id` | TEXT, primary key | Stable species identifier. |
+| `name_en` | TEXT, required, nonempty | English display name. |
+| `name_es` | TEXT, required, nonempty | Spanish display name. |
 | `tier` | INTEGER, required | Species tier, from 1 through 6. |
 | `type` | TEXT, required | Type identifier. |
 | `aspect` | TEXT, nullable | Ability identifier, or NULL. |
@@ -112,7 +116,9 @@ No `egg_tier`, `is_egg_obtainable`, or stored egg pool is needed: egg eligibilit
 
 Type and aspect identifiers do not require lookup tables just to store their names. Their behavior and localized labels belong in approved game definitions and display data.
 
-Species names and optional descriptions are bilingual catalog data, not single-language database columns. The reboot's catalog authoring and loading workflow remains to be specified; this document does not require the historical snapshot/import system.
+`type` is required in both species tables and can be `normal`, with no SQL default. `aspect` may be NULL. This approves storage of the identifier, not a complete type cycle or combat behavior.
+
+Species names are catalog data stored in `name_en` and `name_es`, not duplicated in frontend interface dictionaries or owned monster rows. Both names are required and nonempty; they are not unique identifiers, may repeat across species and support Unicode. Relationships/recipes keep using the stable `id`. No names are generated or translated automatically. Optional descriptions and the catalog authoring/loading workflow remain future work; no description columns or historical snapshot/import system are added.
 
 ### `enemy_species`
 
@@ -121,6 +127,8 @@ One row per enemy species definition. Each species appears in exactly one expedi
 | Column | Proposed storage | Meaning |
 | --- | --- | --- |
 | `id` | TEXT, primary key | Stable enemy species identifier. |
+| `name_en` | TEXT, required, nonempty | English display name. |
+| `name_es` | TEXT, required, nonempty | Spanish display name. |
 | `difficulty` | INTEGER, required | Expedition difficulty where this species can appear. |
 | `type` | TEXT, required | Type identifier from the shared backend definitions. |
 | `aspect` | TEXT, nullable | Ability identifier, or NULL. |
@@ -130,9 +138,9 @@ One row per enemy species definition. Each species appears in exactly one expedi
 | `base_aim` | INTEGER, required | Nonnegative base AIM. |
 | `image_path` | TEXT, required | Portable relative frontend asset path. |
 
-Use the same difficulty identifiers as `player_progress.highest_expedition_difficulty`; their exact numeric encoding remains to be defined. Filter enemy selection by `difficulty`. No enemy `tier` is proposed: difficulty classifies availability, while backend rules determine encounter selection and any stat scaling as the expedition advances.
+Use the same difficulty identifiers as `player_progress.highest_expedition_difficulty`: 1 = Easy, 2 = Normal, 3 = Hard, 4 = Very Hard. Filter enemy selection by `difficulty`. No enemy `tier` is proposed: difficulty classifies availability, while backend rules determine encounter selection and any stat scaling as the expedition advances.
 
-Names and optional descriptions belong in bilingual catalog/display definitions, as with monster species. Validate type/aspect identifiers against backend definitions; no type or aspect foreign-key tables are required.
+Names use the same required `name_en`/`name_es` columns as monster species. Optional descriptions remain future catalog/display work. Validate type/aspect identifiers against backend definitions; no type or aspect foreign-key tables are required.
 
 There is no `enemies` instance table. Each encounter creates enemies in server memory from these definitions. Actual combat HP, scaled stats, targets, and status effects exist only for the simulation. Enemy definitions have no player owner and do not participate in fusion recipes or egg eligibility.
 
@@ -157,6 +165,8 @@ Index `user_id` for collection queries and `species_id` for referenced-species c
 Actual stats are generated once on acquisition and stored, rather than recalculated whenever base stats change. Hatched/fused monsters use independently varied stats with upward rounding; exact distribution, rounding boundaries, and starter stats still need approval.
 
 Do not store level, experience, current combat HP, or an `is_tired` flag. Recovery is derived from server time and `tired_until`; combat HP exists only during simulation.
+
+There is no `status` column: `tired_until > server time` means tired; otherwise the monster is available. Zero is the no-recovery sentinel. Expeditions will write an absolute recovery deadline; no timer job updates the row when it passes. Recovery duration remains undecided.
 
 ### `monster_recipes`
 
@@ -206,6 +216,8 @@ One row per applied schema migration.
 | `applied_at` | INTEGER, required | Application timestamp. |
 
 Schema changes and their history entry must commit together. Do not rewrite already-applied migrations or erase player data to change the schema.
+
+Migration 1 remains unchanged. Migration 2, `add_species_localized_names`, adds the four required name columns to the two species tables, without defaults or fabricated content. Fresh databases apply both versions; version-1 databases with empty species tables can upgrade while preserving account/progress/inventory data and the original history row. If either legacy species table already contains unnamed rows, migration 2 fails and the whole change rolls back, including any columns already added to the other table. Supply an explicitly reviewed naming/data migration before upgrading such a database; do not clear catalogs, edit history or substitute IDs/empty strings as names. The default `backend/data/` directory was absent; no configured non-test storage was opened or created. Verification uses disposable files only.
 
 ## 4. Egg results: a derived pool
 
@@ -276,7 +288,7 @@ A transaction prevents partial changes, but does not by itself prevent executing
 
 ## 7. Decisions still needed before implementation
 
-- Exact SQL constraints, indexes, migrations, and initialization behavior.
+- Player initialization. SQL, indexes, migrations, owned lifecycle, clean/runtime-only verification and operating/backup documentation are complete; no player initialization rules or data are implemented.
 - Starting resources, capacities, levels, and unlocked difficulty.
 - Explicit starter roster and starter-stat initialization.
 - Stat-roll distribution, rounding boundaries, and egg-result selection probabilities.
